@@ -28,8 +28,17 @@ theme:
 nav:
   - Home: index.md
   - 'CRITICAL: Triage': triage.md
-  - 'Linux Hardening': linux.md
-  - 'Windows Hardening': windows.md
+  - 'Operating Systems':
+      - 'Linux Hardening': linux.md
+      - 'Windows Hardening': windows.md
+      - 'Common Exploits': exploits.md
+  - 'Services & Configs':
+      - 'Web (Apache/Nginx/IIS)': services/web.md
+      - 'Active Directory': services/ad.md
+      - 'DNS & Networking': services/dns.md
+      - 'Ports & Protocols': services/ports.md
+  - 'Business Tasks':
+      - 'Common Injects': injects.md
 
 markdown_extensions:
   - admonition
