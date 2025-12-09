@@ -35,6 +35,7 @@ nav:
       - 'Common Exploits': exploits.md
   - 'Services & Configs':
       - 'Web (Apache/Nginx/IIS)': services/web.md
+      - 'Databases (SQL)': services/databases.md
       - 'Active Directory': services/ad.md
       - 'DNS & Networking': services/dns.md
       - 'Ports & Protocols': services/ports.md
