@@ -32,6 +32,7 @@ nav:
   - 'Operating Systems':
       - 'Linux Hardening': linux.md
       - 'Windows Hardening': windows.md
+      - 'AppLocker (Block EXEs)': applocker.md
       - 'Common Exploits': exploits.md
   - 'Services & Configs':
       - 'Web (Apache/Nginx/IIS)': services/web.md
