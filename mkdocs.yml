@@ -26,7 +26,10 @@ theme:
     - content.code.copy
 
 nav:
-  - Home: index.md
+  - Home:
+      - 'Welcome': index.md
+      - 'Competition Schedule': schedule.md
+      - 'Rules & Strategy': strategy.md
   - 'SYSTEM INVENTORY': inventory.md
   - 'CRITICAL: Triage': triage.md
   - 'Network (VyOS/Palo/FTD)': networking.md
@@ -41,9 +44,11 @@ nav:
       - 'Active Directory': services/ad.md
       - 'DNS & Networking': services/dns.md
       - 'Ports & Protocols': services/ports.md
+      - 'Service Self-Check Script': services/self_check.md
   - 'Business & Monitoring':
       - 'Common Injects': injects.md
-      - 'Logging & Splunk': logging.md
+      - 'Logging Setup': logging.md
+      - 'Splunk Hunter Queries': splunk.md
 
 markdown_extensions:
   - admonition
