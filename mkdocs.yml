@@ -27,6 +27,7 @@ theme:
 
 nav:
   - Home: index.md
+  - 'SYSTEM INVENTORY': inventory.md
   - 'CRITICAL: Triage': triage.md
   - 'Network (VyOS/Palo/FTD)': networking.md
   - 'Operating Systems':

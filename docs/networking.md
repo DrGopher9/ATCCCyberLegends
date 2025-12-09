@@ -29,8 +29,16 @@
 ---
 
 ## 2. Palo Alto Firewall (Left Side)
-*If the Netlab GUI is slow/broken, use the CLI.*
+*Protecting: Ecom, Webmail, Splunk, Linux Workstation*
 
+### Access Details
+* [cite_start]**Management IP:** `172.20.242.150` [cite: 253]
+* [cite_start]**Credentials:** `admin` / `Changeme123` [cite: 254]
+* **How to Access:**
+    * [cite_start]**GUI:** Open Firefox on the **Ubuntu Workstation** and browse to `https://172.20.242.150`[cite: 253].
+    * **CLI:** SSH to `172.20.242.150` or use the Netlab Console.
+
+### Critical Commands (CLI)
 * **View Interfaces:**
     `show interface logical`
 * **View Active Sessions:**
@@ -45,15 +53,24 @@
 ---
 
 ## 3. Cisco FTD (Right Side)
-*This is NOT a standard ASA. It runs FTD software. You often need to drop into the diagnostic CLI.*
+*Protecting: AD/DNS, Web Server, FTP, Windows Workstation*
+
+### Access Details
+* [cite_start]**Management IP:** `172.20.240.200` [cite: 256]
+* [cite_start]**Credentials:** `admin` / `!Changeme123` [cite: 257, 258]
+* **How to Access (CRITICAL):**
+    * **GUI:** You **MUST** use the **Windows 11 Workstation**.
+    * [cite_start]**URL:** Browse to `https://172.20.102.254/#/login`[cite: 260].
+    * *Note: The PDF specifies this odd IP `102.254` for GUI access from the workstation.*
+
+### Troubleshooting (CLI)
+*This is NOT a standard ASA. You must drop into diagnostic mode.*
 
 * **Enter the Diagnostic CLI:**
-    1.  Login to the console.
+    1.  Login to the console (`admin` / `!Changeme123`).
     2.  Type: `system support diagnostic-cli`
-    3.  (You are now in a standard Cisco ASA-style prompt).
-    4.  `enable`
-* **Check Interface IPs:**
-    `show interface ip brief`
+    3.  Type: `enable`
+    4.  (You are now in a standard Cisco ASA-style prompt).
 * **Packet Tracer (The #1 Troubleshooting Tool):**
     * *Use this to see EXACTLY why traffic is failing.*
     * `packet-tracer input [Interface_Name] tcp [Src_IP] 12345 [Dst_IP] 80`

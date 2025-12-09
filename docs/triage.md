@@ -1,6 +1,11 @@
 # CRITICAL: Triage (First 15 Mins)
 
-**Assumptions:** You are in a Netlab Console. Copy/Paste might be broken. Internet might be down.
+**!!! RULES OF ENGAGEMENT WARNING !!!**
+1. **NO SNAPSHOTS:** If you lock yourself out, the VM is dead. [cite_start]Do not apply "Default Deny" until you verify access.
+2. **NO IP BLOCKING:** You must allow public services from ALL IPs. [cite_start]Do not whitelist "only my team".
+3. [cite_start]**PING IS REQUIRED:** Do not block ICMP (Ping) on the firewall[cite: 413].
+
+---
 
 ## 1. STOP THE BLEEDING (The "Golden 4")
 *Execute these immediately. Do not wait for permission.*
