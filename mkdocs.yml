@@ -28,6 +28,7 @@ theme:
 nav:
   - Home: index.md
   - 'CRITICAL: Triage': triage.md
+  - 'Network (VyOS/Palo/FTD)': networking.md
   - 'Operating Systems':
       - 'Linux Hardening': linux.md
       - 'Windows Hardening': windows.md
@@ -37,8 +38,9 @@ nav:
       - 'Active Directory': services/ad.md
       - 'DNS & Networking': services/dns.md
       - 'Ports & Protocols': services/ports.md
-  - 'Business Tasks':
+  - 'Business & Monitoring':
       - 'Common Injects': injects.md
+      - 'Logging & Splunk': logging.md
 
 markdown_extensions:
   - admonition

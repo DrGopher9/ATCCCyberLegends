@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/services/dns.md",
+                "file": "docs/networking.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "dns"
+              "title": "networking"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "docs/services/dns.md",
+                "file": "docs/networking.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for dns"
+              "title": "Backlinks for networking"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "docs/services/dns.md",
+                "file": "docs/networking.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from dns"
+              "title": "Outgoing links from networking"
             }
           },
           {
@@ -142,13 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "docs/services/dns.md",
+                "file": "docs/networking.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of dns"
+              "title": "Outline of networking"
             }
           }
         ]
@@ -171,8 +171,9 @@
   },
   "active": "7440c65857c547db",
   "lastOpenFiles": [
-    "docs/services/web.md",
     "docs/services/dns.md",
+    "docs/networking.md",
+    "docs/services/web.md",
     "docs/injects.md",
     "docs/exploits.md",
     "docs/services/ad.md",
