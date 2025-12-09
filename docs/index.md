@@ -20,3 +20,12 @@ Welcome to the central command for the Alexandria Tech CCDC Team.
     &nbsp;&nbsp;|&nbsp;&nbsp; 
     <a href="networking/" style="text-decoration: none; color: gray;">..</a>
 </div>
+
+<br><br><br><br><br>
+<div style="text-align: center; font-size: 10px; color: gray;">
+    ATCC Cyber Legends © 2025
+    <br>
+    <a href="inventory/" style="text-decoration: none; color: gray;">.</a> 
+    &nbsp;&nbsp;|&nbsp;&nbsp; 
+    <a href="networking/" style="text-decoration: none; color: gray;">..</a>
+</div>

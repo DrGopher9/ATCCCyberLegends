@@ -30,6 +30,7 @@ nav:
       - 'Welcome': index.md
       - 'Competition Schedule': schedule.md
       - 'Rules & Strategy': strategy.md
+  - 'SYSTEM INVENTORY': inventory.md
   - 'CRITICAL: Triage': triage.md
   - 'Operating Systems':
       - 'Linux Hardening': linux.md
