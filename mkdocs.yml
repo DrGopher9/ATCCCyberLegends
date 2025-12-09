@@ -1,0 +1,37 @@
+site_name: ATCC Cyber Legends Knowledge Base
+site_description: 'Central command for Alexandria Tech CCDC Team'
+repo_url: https://github.com/DrGopher9/ATCCCyberLegends
+theme:
+  name: material
+  palette:
+    # Dark Mode (Default) - Black & Red
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: red
+      accent: red
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    # Light Mode - White & Red
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: red
+      accent: red
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.instant
+    - search.suggest
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - 'CRITICAL: Triage': triage.md
+  - 'Linux Hardening': linux.md
+  - 'Windows Hardening': windows.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
