@@ -26,13 +26,14 @@ theme:
     - content.code.copy
 
 nav:
+ nav:
   - Home:
       - 'Welcome': index.md
       - 'Competition Schedule': schedule.md
       - 'Rules & Strategy': strategy.md
-  - 'SYSTEM INVENTORY': inventory.md
+  # - 'SYSTEM INVENTORY': inventory.md  <-- DELETED THIS LINE
   - 'CRITICAL: Triage': triage.md
-  - 'Network (VyOS/Palo/FTD)': networking.md
+  # - 'Network (VyOS/Palo/FTD)': networking.md <-- DELETED THIS LINE
   - 'Operating Systems':
       - 'Linux Hardening': linux.md
       - 'Windows Hardening': windows.md
