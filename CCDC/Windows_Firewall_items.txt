@@ -1,0 +1,30 @@
+DO NOT LEAVE ENABLED!
+Web Access, only enable when you need access to files on the web. Make sure to disable when done!
+netsh advfirewall firewall add rule name="Allow TCP 80" dir=in protocol=tcp localport=80 action=allow
+netsh advfirewall firewall add rule name="Allow TCP 443" dir=in protocol=tcp localport=443 action=allow
+
+Other Firewall settings for Domain Controller. Keep enabled
+netsh advfirewall firewall add rule name="DNS-UDP" dir=in protocol=udp localport=53 action=allow
+netsh advfirewall firewall add rule name="NTP" dir=in protocol=udp localport=123 action=allow
+netsh advfirewall firewall add rule name="DC to DC and Client to DC-udp" dir=in protocol=udp localport=135 action=allow
+netsh advfirewall firewall add rule name="Splunk - Forwarder" dir=in protocol=tcp localport=8089 action=allow
+netsh advfirewall firewall add rule name="DNS-TCP" dir=in protocol=tcp localport=53 action=allow
+netsh advfirewall firewall add rule name="DHCP-Server-UDP" dir=in protocol=udp localport=67-68 action=allow
+netsh advfirewall firewall add rule name="DHCP-Server Failover-TCP" dir=in protocol=tcp localport=647 action=allow
+netsh advfirewall firewall add rule name="Kerberos-UDP" dir=in protocol=udp localport=88 action=allow
+netsh advfirewall firewall add rule name="DC to DC and Client to DC-tcp" dir=in protocol=tcp localport=135 action=allow
+netsh advfirewall firewall add rule name="LDAP-TCP" dir=in protocol=tcp localport=389 action=allow
+netsh advfirewall firewall add rule name="LDAP-UDP" dir=in protocol=UDP localport=389 action=allow
+netsh advfirewall firewall add rule name="Kerberos password change-udp" dir=in protocol=udp localport=464 action=allow
+netsh advfirewall firewall add rule name="Kerberos password change-tcp" dir=in protocol=tcp localport=464 action=allow
+netsh advfirewall firewall add rule name="Splunk-Indexer" dir=in protocol=tcp localport=9997 action=allow
+netsh advfirewall firewall add rule name="Ephemeral Ports-Low-TCP" dir=in protocol=TCP localport=1025-5000 action=allow
+netsh advfirewall firewall add rule name="Ephemeral Ports-Low-UDP" dir=in protocol=udp localport=1025-5000 action=allow
+netsh advfirewall firewall add rule name="Ephemeral Ports-High-TCP" dir=in protocol=TCP localport=49152-65535 action=allow
+netsh advfirewall firewall add rule name="Ephemeral Ports-High-UDP" dir=in protocol=udp localport=49152-65535 action=allow
+
+Disable everything else!
+
+Needs:
+Group Policy allowance
+Might have missed something DNS related
