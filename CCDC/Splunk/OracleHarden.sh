@@ -276,9 +276,18 @@ check_malicious_bash() {
     if grep -qE "^[^#]*(trap|PROMPT_COMMAND|curl\s|wget\s|nc\s|/dev/tcp|/dev/udp|bash\s+-i)" "$FILE" 2>/dev/null; then
       found=1
       echo "=== $FILE ===" >> "$malicious_log"
-      grep -nE "^[^#]*(trap|PROMPT_COMMAND|curl\s|wget\s|nc\s|/dev/tcp|/dev/udp|bash\s+-i)" "$FILE" >> "$malicious_log" 2>/dev/null || true
+      grep -nE "^[^#]*(trap|PROMPT_COMMAND|curl\s|wget\s|nc\s|/dev/tcp|/dev/udp|bash\s+-i)" "$FILE" \
+        >> "$malicious_log" 2>/dev/null || true
 
-      # Clean common persistence
+      # 🚨 GUARD: NEVER auto-edit system-wide shell init files
+      case "$FILE" in
+        /etc/bashrc|/etc/profile|/etc/profile.d/*)
+          warn "Suspicious patterns detected in system file $FILE — logged ONLY, not modified"
+          sendLog "Detected suspicious bash content in system file $FILE (not auto-cleaned)"
+          continue
+          ;;
+      esac
+
       sed -i '/^[^#]*trap/d; /^[^#]*PROMPT_COMMAND/d' "$FILE"
       warn "Cleaned: $FILE"
       sendLog "Cleaned malicious bash: $FILE"
@@ -290,6 +299,7 @@ check_malicious_bash() {
 
   [[ $found -eq 1 ]] && warn "Review: $malicious_log" || say "No malicious bash found"
 }
+
 
 ### -------------------- Secure Permissions --------------------
 secure_permissions() {
