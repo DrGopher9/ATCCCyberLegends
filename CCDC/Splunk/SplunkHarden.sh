@@ -1,7 +1,14 @@
 #!/bin/bash
-#Hardening script for Splunk. Assumes some version of Oracle Linux 9.2
+# SplunkHarden-v2.sh
+# Hardening script for Splunk on Oracle Linux 9.2
+# Based on Samuel Brucker's script with fixes applied
 #
-# Samuel Brucker 2024-2026
+# FIXES:
+#   1. License backup - glob outside quotes
+#   2. sysadmin - check if exists before changing password
+#   3. server.conf - create file instead of sed on non-existent
+#   4. Run Splunk as 'splunk' user, not root
+#   5. OpenSSL library conflict workaround
 
 set -u
 
@@ -43,128 +50,138 @@ SPLUNK_HOME="/opt/splunk"
 SPLUNK_PKG="splunk-${SPLUNK_VERSION}-${SPLUNK_BUILD}.x86_64.rpm"
 SPLUNK_URL="https://download.splunk.com/products/splunk/releases/${SPLUNK_VERSION}/linux/${SPLUNK_PKG}"
 SPLUNK_USERNAME="admin"
+SPLUNK_USER="splunk"
+SPLUNK_GROUP="splunk"
 
 BACKUP_DIR="/etc/BacService"
 LOG_DIR="/var/log/syst"
 LOG_FILE="$LOG_DIR/splunkHarden.log"
 
-# Create log dir
+# Create directories
 mkdir -p $LOG_DIR
+mkdir -p $BACKUP_DIR
 
 # Redirect output to log
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "==================================================="
-echo "            Starting Splunk Hardening              "
+echo "         Starting Splunk Hardening (v2)            "
 echo "==================================================="
 
-
-# --- PASSWORD PROMPTS (Gather all creds first) ---
+# --- PASSWORD PROMPTS ---
 echo "--- CREDENTIAL SETUP ---"
-
 echo "Changing System Passwords..."
 
 prompt_password "Root" ROOT_PASS
-prompt_password "Bbob" BBOB_PASS
-prompt_password "Splunk Admin" SPLUNK_PASSWORD
-prompt_password "sysadmin" SYSADMIN_PASS
+prompt_password "Bbob (backup admin)" BBOB_PASS
+prompt_password "Splunk Admin (web UI)" SPLUNK_PASSWORD
 
-
-
+# Change root password
 echo "root:$ROOT_PASS" | chpasswd
-echo "sysadmin:$SYSADMIN_PASS" | chpasswd
+echo "[+] Changed root password"
 
-echo "Changed root and sysadmin passwords"
-
-# Create Backdoor User 'bbob'
-if ! id "bbob" &>/dev/null; then
-    echo "Creating backup user..."
-    useradd bbob
-    echo "bbob:$BBOB_PASS" | chpasswd
-    usermod -aG wheel bbob
+# FIX: Check if sysadmin exists before prompting
+if id "sysadmin" &>/dev/null; then
+    prompt_password "sysadmin" SYSADMIN_PASS
+    echo "sysadmin:$SYSADMIN_PASS" | chpasswd
+    echo "[+] Changed sysadmin password"
 else
-    echo "Updating bbob password..."
-    echo "bbob:$BBOB_PASS" | chpasswd
+    echo "[!] sysadmin user does not exist, skipping"
 fi
 
-
-
-
+# Create Backup User 'bbob'
+if ! id "bbob" &>/dev/null; then
+    echo "Creating backup user bbob..."
+    useradd bbob
+    usermod -aG wheel bbob
+fi
+echo "bbob:$BBOB_PASS" | chpasswd
+echo "[+] Configured bbob with sudo access"
 
 echo "------------------------"
 
-echo "Nuking and then reinstalling Splunk..."
-
-# Backup original Splunk and licenses, then nuke
-if [ -d "$SPLUNK_HOME" ]; then
-    #licenses
-    echo "Found existing Splunk. Backing up licenses..."
-    mkdir -p "$BACKUP_DIR/licenses"
-    if [ -d "$SPLUNK_HOME/etc/licenses" ]; then
-        cp -R "$SPLUNK_HOME/etc/licenses/." "$BACKUP_DIR/licenses/" 
-    fi
-
-    #base Splunk installation
-    echo "Backing up base Splunk installation"
-    mkdir -p "$BACKUP_DIR/splunkORIGINAL"
-    cp -R "$SPLUNK_HOME" "$BACKUP_DIR/splunkORIGINAL"
-    
-    #nuke splunk
-    echo "Stopping and Removing old Splunk..."
-    $SPLUNK_HOME/bin/splunk stop 2>/dev/null || true
-    pkill -f splunkd || true
-    rm -rf "$SPLUNK_HOME"
-    
-    echo "Removing package..."
-    dnf remove -y splunk
+# --- ENSURE SPLUNK USER EXISTS ---
+if ! id "$SPLUNK_USER" &>/dev/null; then
+    echo "Creating splunk user..."
+    useradd -r -m -d /opt/splunk -s /sbin/nologin "$SPLUNK_USER"
 fi
 
-# Download & Install
+echo "Nuking and then reinstalling Splunk..."
+
+# --- BACKUP EXISTING SPLUNK ---
+if [ -d "$SPLUNK_HOME" ]; then
+    # FIX: Backup licenses - glob OUTSIDE quotes
+    echo "Backing up licenses..."
+    mkdir -p "$BACKUP_DIR/licenses"
+    if [ -d "$SPLUNK_HOME/etc/licenses" ]; then
+        # Check if directory has files
+        if ls $SPLUNK_HOME/etc/licenses/* &>/dev/null; then
+            cp -R $SPLUNK_HOME/etc/licenses/* "$BACKUP_DIR/licenses/" 2>/dev/null || true
+            echo "[+] Licenses backed up"
+        else
+            echo "[!] No license files found"
+        fi
+    fi
+
+    # Backup base Splunk installation
+    echo "Backing up base Splunk installation..."
+    mkdir -p "$BACKUP_DIR/splunkORIGINAL"
+    cp -R "$SPLUNK_HOME" "$BACKUP_DIR/splunkORIGINAL/" 2>/dev/null || true
+    
+    # Stop Splunk
+    echo "Stopping Splunk..."
+    $SPLUNK_HOME/bin/splunk stop 2>/dev/null || true
+    pkill -f splunkd 2>/dev/null || true
+    sleep 2
+    
+    # Remove old installation
+    rm -rf "$SPLUNK_HOME"
+    dnf remove -y splunk 2>/dev/null || true
+fi
+
+# --- DOWNLOAD & INSTALL ---
 if [ ! -f "$SPLUNK_PKG" ]; then
     echo "Downloading Splunk $SPLUNK_VERSION..."
     wget -q -O "$SPLUNK_PKG" "$SPLUNK_URL"
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to download Splunk"
+        exit 1
+    fi
 fi
 
 echo "Installing Splunk..."
 dnf install -y "$SPLUNK_PKG"
 
-# Create Admin User (Seed)
+# --- SET OWNERSHIP BEFORE FIRST START ---
+echo "Setting Splunk ownership..."
+chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} "$SPLUNK_HOME"
+
+# --- CREATE CONFIG FILES BEFORE FIRST START ---
+echo "Creating Splunk configuration..."
 mkdir -p $SPLUNK_HOME/etc/system/local
+
+# Create user-seed.conf (admin credentials)
 cat > $SPLUNK_HOME/etc/system/local/user-seed.conf <<EOF
 [user_info]
 USERNAME = $SPLUNK_USERNAME
 PASSWORD = $SPLUNK_PASSWORD
 EOF
-chown -R splunk:splunk $SPLUNK_HOME/etc/system/local
 
-# Restore Licenses
-if [ -d "$BACKUP_DIR/licenses" ]; then
-    echo "Restoring licenses..."
-    mkdir -p $SPLUNK_HOME/etc/licenses
-    cp -r "$BACKUP_DIR/licenses/." $SPLUNK_HOME/etc/licenses/
-    chown -R splunk:splunk $SPLUNK_HOME/etc/licenses
-fi
+# FIX: Create server.conf BEFORE starting (not sed after)
+cat > $SPLUNK_HOME/etc/system/local/server.conf <<EOF
+[sslConfig]
+enableSplunkdSSL = true
+sslVersions = tls1.2
+allowSslCompression = false
 
-# First Start (Accept License)
-echo "Initializing Splunk..."
-$SPLUNK_HOME/bin/splunk start --accept-license --answer-yes --no-prompt
+[general]
+serverName = $(hostname)
+EOF
 
-echo "Hardening Splunk keys and certs"
-
-# C. Bind MongoDB to Localhost
-echo "Locking down MongoDB..."
-sed -i '$a [kvstore]\nbind_ip = 127.0.0.1' $SPLUNK_HOME/etc/system/local/server.conf
-
-# D. Inputs (Forwarder/Syslog)
-cat > $SPLUNK_HOME/etc/system/local/inputs.conf << EOF
+# Create inputs.conf
+cat > $SPLUNK_HOME/etc/system/local/inputs.conf <<EOF
 [default]
 host = $(hostname)
-
-# I prefer to use the listener command so that I can see it open in Splunk's listener page
-# But I'm leaving the config here if anyone wants to do it from this file.
-#[tcp://9997]
-#index = main
-#disabled = 0
 
 [tcp://514]
 sourcetype = syslog
@@ -172,55 +189,92 @@ index = main
 disabled = 0
 EOF
 
+# Set ownership on all config files
+chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} $SPLUNK_HOME/etc/system/local
+chmod 600 $SPLUNK_HOME/etc/system/local/*.conf
 
-# Start Splunk Back Up 
-echo "Starting Hardened Splunk..."
-$SPLUNK_HOME/bin/splunk start
-$SPLUNK_HOME/bin/splunk enable boot-start                                
+# --- RESTORE LICENSES ---
+if [ -d "$BACKUP_DIR/licenses" ]; then
+    if ls $BACKUP_DIR/licenses/* &>/dev/null; then
+        echo "Restoring licenses..."
+        mkdir -p $SPLUNK_HOME/etc/licenses
+        cp -r $BACKUP_DIR/licenses/* $SPLUNK_HOME/etc/licenses/ 2>/dev/null || true
+        chown -R ${SPLUNK_USER}:${SPLUNK_GROUP} $SPLUNK_HOME/etc/licenses
+        echo "[+] Licenses restored"
+    fi
+fi
 
-# Add the 9997 listener using splunk CLI
-echo "Enabling 9997 Listener..."
-$SPLUNK_HOME/bin/splunk enable listen 9997 -auth "$SPLUNK_USERNAME:$SPLUNK_PASSWORD"
+# --- FIRST START AS SPLUNK USER ---
+echo "Initializing Splunk (as $SPLUNK_USER user)..."
 
-echo "Enabling 514 Listener"
+# FIX: Clear LD_LIBRARY_PATH to avoid OpenSSL conflict with systemctl
+export LD_LIBRARY_PATH=""
 
-# --- 4. OS HARDENING ---
-echo "Hardening System"
+# Start Splunk as the splunk user
+su -s /bin/bash $SPLUNK_USER -c "$SPLUNK_HOME/bin/splunk start --accept-license --answer-yes --no-prompt"
 
+if [ $? -ne 0 ]; then
+    echo "ERROR: Splunk failed to start"
+    exit 1
+fi
+
+echo "Waiting for Splunk to initialize..."
+sleep 10
+
+# --- ENABLE BOOT START ---
+echo "Enabling Splunk boot-start..."
+$SPLUNK_HOME/bin/splunk enable boot-start -user $SPLUNK_USER
+
+# --- ENABLE 9997 LISTENER ---
+echo "Enabling 9997 listener..."
+su -s /bin/bash $SPLUNK_USER -c "$SPLUNK_HOME/bin/splunk enable listen 9997 -auth '$SPLUNK_USERNAME:$SPLUNK_PASSWORD'" || {
+    echo "[!] Could not enable 9997 listener automatically"
+    echo "[!] Enable manually: splunk enable listen 9997 -auth admin:<password>"
+}
+
+# --- OS HARDENING ---
+echo ""
+echo "==================================================="
+echo "              OS Hardening                         "
+echo "==================================================="
 
 echo "Setting Legal Banners..."
-cat > /etc/issue << EOF
-UNAUTHORIZED ACCESS PROHIBITED. VIOLATORS WILL BE PROSECUTED TO THE FULLEST EXTENT OF THE LAW.
+cat > /etc/issue <<EOF
+UNAUTHORIZED ACCESS PROHIBITED. VIOLATORS WILL BE PROSECUTED.
 EOF
 cp /etc/issue /etc/motd
 
 echo "Clearing Cron jobs..."
 echo "" > /etc/crontab
-rm -f /var/spool/cron/*
+rm -f /var/spool/cron/* 2>/dev/null || true
 
 echo "Removing SSH Server..."
-dnf remove -y openssh-server
+systemctl stop sshd 2>/dev/null || true
+systemctl disable sshd 2>/dev/null || true
+dnf remove -y openssh-server 2>/dev/null || true
 
 echo "Restricting user creation tools..."
-chmod 700 /usr/sbin/useradd
-chmod 700 /usr/sbin/groupadd
+chmod 700 /usr/sbin/useradd 2>/dev/null || true
+chmod 700 /usr/sbin/groupadd 2>/dev/null || true
 
 echo "Locking down Cron and AT permissions..."
-touch /etc/cron.allow
+echo "root" > /etc/cron.allow
 chmod 600 /etc/cron.allow
 awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/cron.deny
 
-touch /etc/at.allow
+echo "root" > /etc/at.allow
 chmod 600 /etc/at.allow
 awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/at.deny
 
-# --- 5. FIREWALL (STRICT MODE) ---
-echo "Configuring Firewall"
+# --- FIREWALL ---
+echo ""
+echo "==================================================="
+echo "              Firewall Configuration               "
+echo "==================================================="
 
-# Install IPTables services (Oracle 9 Standard)
-dnf install -y iptables-services
-systemctl stop firewalld
-systemctl disable firewalld
+dnf install -y iptables-services 2>/dev/null || true
+systemctl stop firewalld 2>/dev/null || true
+systemctl disable firewalld 2>/dev/null || true
 
 # Flush existing rules
 iptables -F
@@ -232,7 +286,7 @@ iptables -P INPUT DROP
 iptables -P OUTPUT DROP
 iptables -P FORWARD DROP
 
-# Allow loopback traffic
+# Allow loopback
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
 
@@ -240,60 +294,68 @@ iptables -A OUTPUT -o lo -j ACCEPT
 iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
-# Allow ICMP (Ping)
-# RELAXED LIMITS: 20/s with burst of 50 to prevent blocking scoring engines
-iptables -A INPUT -p icmp --icmp-type echo-request -m length --length 0:192 -m limit --limit 20/s --limit-burst 50 -j ACCEPT
-iptables -A INPUT -p icmp --icmp-type echo-request -m length --length 0:192 -j LOG --log-prefix "Rate-limit exceeded: " --log-level 4
-iptables -A INPUT -p icmp --icmp-type echo-request -m length ! --length 0:192 -j LOG --log-prefix "Invalid size: " --log-level 4
-iptables -A INPUT -p icmp --icmp-type echo-reply -m limit --limit 20/s --limit-burst 50 -j ACCEPT
-iptables -A INPUT -p icmp -j DROP
+# Allow ICMP (ping) - needed for scoring
+iptables -A INPUT -p icmp --icmp-type echo-request -m limit --limit 20/s --limit-burst 50 -j ACCEPT
+iptables -A INPUT -p icmp --icmp-type echo-reply -j ACCEPT
+iptables -A OUTPUT -p icmp -j ACCEPT
 
-# Allow DNS traffic (Outbound UDP/TCP 53)
-# RELAXED LIMITS: 200/min to allow dnf updates/bursts
-iptables -A OUTPUT -p udp --dport 53 -m limit --limit 200/min --limit-burst 100 -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 53 -m limit --limit 200/min --limit-burst 100 -j ACCEPT
+# Allow DNS outbound
+iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
 
-# Allow HTTP/HTTPS traffic (Web Interface Access & Output for Updates)
-# RELAXED OUTPUT: 600/min to ensure package downloads don't get throttled
-iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -m limit --limit 100/min --limit-burst 200 -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 80 -m conntrack --ctstate NEW -m limit --limit 600/min --limit-burst 500 -j ACCEPT
+# Allow HTTP/HTTPS outbound (for updates)
+iptables -A OUTPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j ACCEPT
+iptables -A OUTPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
 
-iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 100/min --limit-burst 200 -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 600/min --limit-burst 500 -j ACCEPT
-
-# Allow Splunk-specific traffic
-# Splunk Web (8000)
+# Splunk Web (8000) - SCORED SERVICE
 iptables -A INPUT -p tcp --dport 8000 -m conntrack --ctstate NEW -j ACCEPT
-iptables -A OUTPUT -p tcp --sport 8000 -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
-# Splunk Management (8089)
-iptables -A INPUT -p tcp --dport 8089 -m conntrack --ctstate NEW -j ACCEPT
-iptables -A OUTPUT -p tcp --sport 8089 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+# Splunk Management (8089) - restrict to localhost
+iptables -A INPUT -p tcp --dport 8089 -s 127.0.0.1 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8089 -j DROP
 
 # Splunk Forwarders (9997)
 iptables -A INPUT -p tcp --dport 9997 -m conntrack --ctstate NEW -j ACCEPT
-iptables -A OUTPUT -p tcp --sport 9997 -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
-# Syslog (514)
+# Syslog (514 TCP and UDP)
 iptables -A INPUT -p tcp --dport 514 -m conntrack --ctstate NEW -j ACCEPT
-iptables -A OUTPUT -p tcp --sport 514 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+iptables -A INPUT -p udp --dport 514 -j ACCEPT
 
-# Log dropped packets
-iptables -A INPUT -j LOG --log-prefix "DROP-IN:" --log-level 4 --log-ip-options --log-tcp-options --log-tcp-sequence
-iptables -A OUTPUT -j LOG --log-prefix "DROP-OUT:" --log-level 4 --log-ip-options --log-tcp-options --log-tcp-sequence
+# Log dropped packets (rate limited)
+iptables -A INPUT -m limit --limit 5/min -j LOG --log-prefix "DROP-IN: " --log-level 4
+iptables -A OUTPUT -m limit --limit 5/min -j LOG --log-prefix "DROP-OUT: " --log-level 4
 
 echo "Saving IPTables rules..."
 mkdir -p /etc/iptables
 iptables-save > /etc/iptables/rules.v4
-
-# Ensure Persistence on Oracle Linux
-/usr/libexec/iptables/iptables.init save
+/usr/libexec/iptables/iptables.init save 2>/dev/null || iptables-save > /etc/sysconfig/iptables
 systemctl enable iptables
 systemctl start iptables
 
+# --- CLEANUP ---
+rm -f "$SPLUNK_PKG" 2>/dev/null || true
 
-# --- FINAL CLEANUP ---
-rm -f "$SPLUNK_PKG"
+# --- VERIFICATION ---
+echo ""
 echo "==================================================="
-echo "   Splunk hardening complete"
+echo "              Verification                         "
 echo "==================================================="
+
+echo "Splunk Status:"
+su -s /bin/bash $SPLUNK_USER -c "$SPLUNK_HOME/bin/splunk status" || echo "[!] Check Splunk manually"
+
+echo ""
+echo "Listening Ports:"
+ss -tlnp | grep -E "8000|8089|9997|514" || echo "[!] Check ports manually"
+
+echo ""
+echo "==================================================="
+echo "         Splunk Hardening Complete                 "
+echo "==================================================="
+echo ""
+echo "Splunk Web UI: http://$(hostname -I | awk '{print $1}'):8000"
+echo "Login: $SPLUNK_USERNAME / <your password>"
+echo ""
+echo "Splunk running as: $SPLUNK_USER"
+echo "Logs saved to: $LOG_FILE"
+echo ""
