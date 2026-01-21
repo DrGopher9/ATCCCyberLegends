@@ -101,7 +101,7 @@ if [ -d "$SPLUNK_HOME" ]; then
     echo "Found existing Splunk. Backing up licenses..."
     mkdir -p "$BACKUP_DIR/licenses"
     if [ -d "$SPLUNK_HOME/etc/licenses" ]; then
-        cp -R "$SPLUNK_HOME/etc/licenses/*" "$BACKUP_DIR/licenses/" 
+        cp -R "$SPLUNK_HOME/etc/licenses/." "$BACKUP_DIR/licenses/" 
     fi
 
     #base Splunk installation
@@ -141,7 +141,7 @@ chown -R splunk:splunk $SPLUNK_HOME/etc/system/local
 if [ -d "$BACKUP_DIR/licenses" ]; then
     echo "Restoring licenses..."
     mkdir -p $SPLUNK_HOME/etc/licenses
-    cp -r "$BACKUP_DIR/licenses/"* $SPLUNK_HOME/etc/licenses/
+    cp -r "$BACKUP_DIR/licenses/." $SPLUNK_HOME/etc/licenses/
     chown -R splunk:splunk $SPLUNK_HOME/etc/licenses
 fi
 
