@@ -276,61 +276,6 @@ dnf install -y iptables-services 2>/dev/null || true
 systemctl stop firewalld 2>/dev/null || true
 systemctl disable firewalld 2>/dev/null || true
 
-# Flush existing rules
-iptables -F
-iptables -X
-iptables -Z
-
-# Set default policies
-iptables -P INPUT DROP
-iptables -P OUTPUT DROP
-iptables -P FORWARD DROP
-
-# Allow loopback
-iptables -A INPUT -i lo -j ACCEPT
-iptables -A OUTPUT -o lo -j ACCEPT
-
-# Allow established connections
-iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-
-# Allow ICMP (ping) - needed for scoring
-iptables -A INPUT -p icmp --icmp-type echo-request -m limit --limit 20/s --limit-burst 50 -j ACCEPT
-iptables -A INPUT -p icmp --icmp-type echo-reply -j ACCEPT
-iptables -A OUTPUT -p icmp -j ACCEPT
-
-# Allow DNS outbound
-iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
-
-# Allow HTTP/HTTPS outbound (for updates)
-iptables -A OUTPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
-
-# Splunk Web (8000) - SCORED SERVICE
-iptables -A INPUT -p tcp --dport 8000 -m conntrack --ctstate NEW -j ACCEPT
-
-# Splunk Management (8089) - restrict to localhost
-iptables -A INPUT -p tcp --dport 8089 -s 127.0.0.1 -j ACCEPT
-iptables -A INPUT -p tcp --dport 8089 -j DROP
-
-# Splunk Forwarders (9997)
-iptables -A INPUT -p tcp --dport 9997 -m conntrack --ctstate NEW -j ACCEPT
-
-# Syslog (514 TCP and UDP)
-iptables -A INPUT -p tcp --dport 514 -m conntrack --ctstate NEW -j ACCEPT
-iptables -A INPUT -p udp --dport 514 -j ACCEPT
-
-# Log dropped packets (rate limited)
-iptables -A INPUT -m limit --limit 5/min -j LOG --log-prefix "DROP-IN: " --log-level 4
-iptables -A OUTPUT -m limit --limit 5/min -j LOG --log-prefix "DROP-OUT: " --log-level 4
-
-echo "Saving IPTables rules..."
-mkdir -p /etc/iptables
-iptables-save > /etc/iptables/rules.v4
-/usr/libexec/iptables/iptables.init save 2>/dev/null || iptables-save > /etc/sysconfig/iptables
-systemctl enable iptables
-systemctl start iptables
 
 # --- CLEANUP ---
 rm -f "$SPLUNK_PKG" 2>/dev/null || true
