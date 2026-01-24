@@ -11,7 +11,7 @@
 # - Removed undefined function calls
 # - Simplified ports per requirements:
 #   * Web: 80, 443, 9997
-#   * Mail: 25, 587, 110, 143, 80, 443, 9997
+#   * Mail: 25, 587, 110, 995, 143, 993, 80, 443, 9997
 #   * Splunk: 8000, 9997 (+ HTTP/HTTPS outbound for updates)
 ################################################################################
 
@@ -335,10 +335,11 @@ apply_web_rules() {
     log_info "  → Configuring WEB server rules..."
     
     #============================================================================
-    # HTTP (Port 80) - SCORED SERVICE - NO RATE LIMITING
+    # HTTP (Port 80) - SCORED SERVICE
     #============================================================================
-    log_info "    → Allowing HTTP (80) - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j ACCEPT
+    log_info "    → Allowing HTTP (80)..."
+    iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -m limit --limit 50/sec --limit-burst 100 -j ACCEPT
+    iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j LOG_DROP
     iptables -A OUTPUT -p tcp --sport 80 -j ACCEPT
     
     # Outbound HTTP
@@ -346,10 +347,11 @@ apply_web_rules() {
     iptables -A INPUT -p tcp --sport 80 -j ACCEPT
     
     #============================================================================
-    # HTTPS (Port 443) - SCORED SERVICE - NO RATE LIMITING
+    # HTTPS (Port 443) - SCORED SERVICE
     #============================================================================
-    log_info "    → Allowing HTTPS (443) - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
+    log_info "    → Allowing HTTPS (443)..."
+    iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 50/sec --limit-burst 100 -j ACCEPT
+    iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j LOG_DROP
     iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
     
     # Outbound HTTPS
@@ -373,10 +375,11 @@ apply_mail_rules() {
     log_info "  → Configuring MAIL server rules..."
     
     #============================================================================
-    # SMTP (Port 25) - SCORED SERVICE - NO RATE LIMITING
+    # SMTP (Port 25) - SCORED SERVICE
     #============================================================================
-    log_info "    → Allowing SMTP (25) - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 25 -j ACCEPT
+    log_info "    → Allowing SMTP (25)..."
+    iptables -A INPUT -p tcp --dport 25 -m limit --limit 10/sec -j ACCEPT
+    iptables -A INPUT -p tcp --dport 25 -j LOG_DROP
     iptables -A OUTPUT -p tcp --sport 25 -j ACCEPT
     
     # Outbound SMTP for sending
@@ -384,46 +387,65 @@ apply_mail_rules() {
     iptables -A INPUT -p tcp --sport 25 -j ACCEPT
     
     #============================================================================
-    # SMTP Submission (Port 587) - NO RATE LIMITING
+    # SMTP Submission (Port 587)
     #============================================================================
-    log_info "    → Allowing SMTP Submission (587) - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 587 -j ACCEPT
+    log_info "    → Allowing SMTP Submission (587)..."
+    iptables -A INPUT -p tcp --dport 587 -m limit --limit 10/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 587 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 587 -j ACCEPT
     iptables -A INPUT -p tcp --sport 587 -j ACCEPT
     
     #============================================================================
-    # POP3 (Port 110) - SCORED SERVICE - NO RATE LIMITING
+    # POP3 (Port 110) - SCORED SERVICE
     #============================================================================
-    log_info "    → Allowing POP3 (110) - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 110 -j ACCEPT
+    log_info "    → Allowing POP3 (110)..."
+    iptables -A INPUT -p tcp --dport 110 -m limit --limit 10/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 110 -j ACCEPT
     
-    
     #============================================================================
-    # IMAP (Port 143) - NO RATE LIMITING
+    # IMAP (Port 143)
     #============================================================================
-    log_info "    → Allowing IMAP (143) - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 143 -j ACCEPT
+    log_info "    → Allowing IMAP (143)..."
+    iptables -A INPUT -p tcp --dport 143 -m limit --limit 10/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 143 -j ACCEPT
     
+    
     #============================================================================
-    # HTTP (Port 80) - For webmail - NO RATE LIMITING
+    # HTTP (Port 80) - For webmail
     #============================================================================
-    log_info "    → Allowing HTTP (80) for webmail - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+    log_info "    → Allowing HTTP (80) for webmail..."
+    iptables -A INPUT -p tcp --dport 80 -m limit --limit 50/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 80 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
     iptables -A INPUT -p tcp --sport 80 -j ACCEPT
     
     #============================================================================
-    # HTTPS (Port 443) - For webmail - NO RATE LIMITING
+    # HTTPS (Port 443) - For webmail
     #============================================================================
-    log_info "    → Allowing HTTPS (443) for webmail - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+    log_info "    → Allowing HTTPS (443) for webmail..."
+    iptables -A INPUT -p tcp --dport 443 -m limit --limit 50/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
     iptables -A INPUT -p tcp --sport 443 -j ACCEPT
+
+    #============================================================================
+    # DNS (Port 53) - SCORED SERVICE
+    #============================================================================
+    # Inbound DNS queries (UDP - primary protocol)
+    iptables -A INPUT -p udp --dport 53 -m limit --limit 50/sec -j ACCEPT
+    iptables -A INPUT -p udp --dport 53 -j LOG_DROP
+    iptables -A OUTPUT -p udp --sport 53 -j ACCEPT
+    
+    # Inbound DNS queries (TCP - for zone transfers, large responses)
+    iptables -A INPUT -p tcp --dport 53 -m limit --limit 20/sec -j ACCEPT
+    iptables -A INPUT -p tcp --dport 53 -j LOG_DROP
+    iptables -A OUTPUT -p tcp --sport 53 -j ACCEPT
+    
+    # Outbound DNS (for recursion/forwarding)
+    iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+    iptables -A INPUT -p udp --sport 53 -j ACCEPT
+    iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 53 -j ACCEPT
     
     #============================================================================
     # SPLUNK FORWARDER (Port 9997)
@@ -472,10 +494,10 @@ apply_ftp_rules() {
     log_info "  → Configuring FTP server rules..."
     
     #============================================================================
-    # FTP Control (Port 21) - NO RATE LIMITING
+    # FTP Control (Port 21)
     #============================================================================
-    log_info "    → Allowing FTP (21) - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 21 -j ACCEPT
+    log_info "    → Allowing FTP (21)..."
+    iptables -A INPUT -p tcp --dport 21 -m limit --limit 10/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 21 -j ACCEPT
     
     #============================================================================
@@ -513,14 +535,14 @@ apply_generic_rules() {
     log_info "  → Configuring GENERIC service rules..."
     
     # Allow HTTP, HTTPS, Splunk as requested
-    log_info "    → Allowing HTTP (80) - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+    log_info "    → Allowing HTTP (80)..."
+    iptables -A INPUT -p tcp --dport 80 -m limit --limit 50/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 80 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
     iptables -A INPUT -p tcp --sport 80 -j ACCEPT
     
-    log_info "    → Allowing HTTPS (443) - NO RATE LIMIT..."
-    iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+    log_info "    → Allowing HTTPS (443)..."
+    iptables -A INPUT -p tcp --dport 443 -m limit --limit 50/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
     iptables -A INPUT -p tcp --sport 443 -j ACCEPT
@@ -720,7 +742,7 @@ MONEOF
 main() {
     clear
     echo "================================================================================"
-    echo "           CCDC Competition IPTables Hardening"
+    echo "           CCDC Competition IPTables Hardening - FIXED v2"
     echo "           2026 Midwest CCDC Qualifier"
     echo "================================================================================"
     echo ""
