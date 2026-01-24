@@ -1,0 +1,183 @@
+<dashboard version="1.1">
+  <label>CCDC Linux Security</label>
+  <description>Linux server security monitoring</description>
+
+  <row>
+    <panel>
+      <title>SSH Failed Logins</title>
+      <single>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) "Failed password" | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[10,50]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>SSH Successful Logins</title>
+      <single>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) "Accepted" | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>Sudo Commands</title>
+      <single>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) "sudo:" | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>Root Logins</title>
+      <single>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) ("Accepted" AND "root") | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[0,5]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>SSH Failed Logins by Source IP</title>
+      <chart>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) "Failed password" | rex "from (?&lt;src_ip&gt;\d+\.\d+\.\d+\.\d+)" | stats count by src_ip | sort -count | head 10</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>SSH Failed Logins by User</title>
+      <chart>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) "Failed password" | rex "for (?:invalid user )?(?&lt;user&gt;\S+)" | stats count by user | sort -count | head 10</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Recent SSH Failed Logins</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) "Failed password" | rex "for (?:invalid user )?(?&lt;user&gt;\S+)" | rex "from (?&lt;src_ip&gt;\d+\.\d+\.\d+\.\d+)" | table _time, host, user, src_ip | head 20</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Successful SSH Logins</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) "Accepted" | rex "for (?&lt;user&gt;\S+)" | rex "from (?&lt;src_ip&gt;\d+\.\d+\.\d+\.\d+)" | table _time, host, user, src_ip | head 20</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Sudo Activity</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) "sudo:" | rex "sudo:\s+(?&lt;sudo_user&gt;\S+)" | rex "COMMAND=(?&lt;command&gt;.*)" | table _time, host, sudo_user, command | head 20</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>User/Group Changes (Audit)</title>
+      <table>
+        <search>
+          <query>index=* sourcetype=linux_audit (type=ADD_USER OR type=DEL_USER OR type=ADD_GROUP OR type=USER_MGMT) | table _time, host, type, msg | head 20</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Cron Activity</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=syslog OR sourcetype=linux_secure) "CRON" | table _time, host, _raw | head 20</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Linux Hosts - Event Counts</title>
+      <chart>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog OR sourcetype=linux_audit) | stats count by host | sort -count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Authentication Timeline</title>
+      <chart>
+        <search>
+          <query>index=* (sourcetype=linux_secure OR sourcetype=syslog) ("Failed password" OR "Accepted") | eval status=if(match(_raw, "Failed"), "Failed", "Success") | timechart span=10m count by status</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+</dashboard>

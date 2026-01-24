@@ -1,0 +1,149 @@
+<dashboard version="1.1">
+  <label>CCDC Security Overview</label>
+  <description>Main security monitoring dashboard for CCDC competition</description>
+
+  <row>
+    <panel>
+      <title>Failed Logins (Last Hour)</title>
+      <single>
+        <search>
+          <query>index=* ("Failed password" OR "authentication failure" OR EventCode=4625) earliest=-1h | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[10,50]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Successful Logins (Last Hour)</title>
+      <single>
+        <search>
+          <query>index=* ("Accepted" OR "session opened" OR EventCode=4624) earliest=-1h | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="useColors">0</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Active Hosts</title>
+      <single>
+        <search>
+          <query>| metadata type=hosts index=* | stats count</query>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>Events (Last Hour)</title>
+      <single>
+        <search>
+          <query>index=* earliest=-1h | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Failed Logins by Source IP</title>
+      <chart>
+        <search>
+          <query>index=* ("Failed password" OR "authentication failure" OR EventCode=4625) | rex field=_raw "from (?&lt;src_ip&gt;\d+\.\d+\.\d+\.\d+)" | eval src_ip=coalesce(src_ip, Source_Network_Address, src) | stats count by src_ip | sort -count | head 10</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Failed Logins by User</title>
+      <chart>
+        <search>
+          <query>index=* ("Failed password" OR "authentication failure" OR EventCode=4625) | rex field=_raw "for (?:invalid user )?(?&lt;target_user&gt;\S+)" | eval target_user=coalesce(target_user, TargetUserName, user) | stats count by target_user | sort -count | head 10</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Authentication Events Timeline</title>
+      <chart>
+        <search>
+          <query>index=* ("Failed password" OR "Accepted" OR "authentication failure" OR EventCode=4624 OR EventCode=4625) | eval status=case(match(_raw, "Failed|4625"), "Failed", match(_raw, "Accepted|4624"), "Success", true(), "Other") | timechart span=5m count by status</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Recent Failed Logins</title>
+      <table>
+        <search>
+          <query>index=* ("Failed password" OR "authentication failure" OR EventCode=4625) | rex field=_raw "from (?&lt;src_ip&gt;\d+\.\d+\.\d+\.\d+)" | rex field=_raw "for (?:invalid user )?(?&lt;target_user&gt;\S+)" | eval src_ip=coalesce(src_ip, Source_Network_Address), target_user=coalesce(target_user, TargetUserName) | table _time, host, target_user, src_ip | head 20</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Events by Host</title>
+      <chart>
+        <search>
+          <query>index=* | stats count by host | sort -count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Events by Sourcetype</title>
+      <chart>
+        <search>
+          <query>index=* | stats count by sourcetype | sort -count | head 10</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Host Last Seen</title>
+      <table>
+        <search>
+          <query>| metadata type=hosts index=* | eval lastTime=strftime(lastTime, "%Y-%m-%d %H:%M:%S") | eval age_mins=round((now()-recentTime)/60,0) | table host, lastTime, age_mins | sort age_mins</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+</dashboard>

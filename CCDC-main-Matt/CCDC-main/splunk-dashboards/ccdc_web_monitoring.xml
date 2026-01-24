@@ -1,0 +1,181 @@
+<dashboard version="1.1">
+  <label>CCDC Web Server Monitoring</label>
+  <description>Web server and application security monitoring</description>
+
+  <row>
+    <panel>
+      <title>Total Web Requests (Last Hour)</title>
+      <single>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common OR sourcetype=iis) | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>4xx Errors</title>
+      <single>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common OR sourcetype=iis) status>=400 status<500 | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[50,200]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>5xx Errors</title>
+      <single>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common OR sourcetype=iis) status>=500 | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[5,20]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Unique IPs</title>
+      <single>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common OR sourcetype=iis) | stats dc(clientip) as unique_ips</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Requests by Source IP</title>
+      <chart>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common) | stats count by clientip | sort -count | head 10</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Requests by Status Code</title>
+      <chart>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common OR sourcetype=iis) | stats count by status | sort -count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Web Traffic Timeline</title>
+      <chart>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common OR sourcetype=iis) | timechart span=5m count by host</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Suspicious Requests (Attack Patterns)</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common OR sourcetype=iis) | where match(uri, "(?i)(\.\.\/|%2e%2e|etc/passwd|proc/self|\<script\>|union.*select|eval\(|base64|cmd=|shell|exec\(|system\()") | table _time, host, clientip, method, uri, status | head 20</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>404 Not Found - Top URLs</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common OR sourcetype=iis) status=404 | stats count by uri | sort -count | head 10</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+    <panel>
+      <title>403 Forbidden - Top URLs</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common OR sourcetype=iis) status=403 | stats count by uri | sort -count | head 10</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>POST Requests</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common) method=POST | table _time, host, clientip, uri, status | head 20</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Web Server Errors</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=apache_error OR sourcetype=nginx_error OR sourcetype="WinEventLog:*IIS*") | table _time, host, _raw | head 20</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>User Agents - Potentially Suspicious</title>
+      <table>
+        <search>
+          <query>index=* (sourcetype=access_combined OR sourcetype=access_common) | where match(useragent, "(?i)(curl|wget|python|nikto|sqlmap|nmap|masscan|dirbuster|gobuster|burp|scanner)") | stats count by useragent, clientip | sort -count | head 10</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+</dashboard>

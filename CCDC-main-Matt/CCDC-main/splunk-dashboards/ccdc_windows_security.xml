@@ -1,0 +1,187 @@
+<dashboard version="1.1">
+  <label>CCDC Windows Security</label>
+  <description>Windows Active Directory and server security monitoring</description>
+
+  <row>
+    <panel>
+      <title>Failed Logins (Windows)</title>
+      <single>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" EventCode=4625 | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[5,20]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Account Lockouts</title>
+      <single>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" EventCode=4740 | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[1,5]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>New Users Created</title>
+      <single>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" EventCode=4720 | stats count</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[0,1]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Admin Group Changes</title>
+      <single>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" (EventCode=4728 OR EventCode=4732) | stats count</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[0,1]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Windows Failed Login Attempts</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" EventCode=4625 | table _time, host, TargetUserName, Source_Network_Address, Failure_Reason | head 20</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Failed Logins by Source IP</title>
+      <chart>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" EventCode=4625 | stats count by Source_Network_Address | sort -count | head 10</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Failed Logins by Target Account</title>
+      <chart>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" EventCode=4625 | stats count by TargetUserName | sort -count | head 10</query>
+          <earliest>-4h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>User Account Changes</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" (EventCode=4720 OR EventCode=4722 OR EventCode=4725 OR EventCode=4726 OR EventCode=4738) | eval action=case(EventCode=4720, "User Created", EventCode=4722, "User Enabled", EventCode=4725, "User Disabled", EventCode=4726, "User Deleted", EventCode=4738, "User Changed") | table _time, host, action, TargetUserName, SubjectUserName</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Security Group Changes</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" (EventCode=4728 OR EventCode=4729 OR EventCode=4732 OR EventCode=4733) | eval action=case(EventCode=4728, "Member Added (Global)", EventCode=4729, "Member Removed (Global)", EventCode=4732, "Member Added (Local)", EventCode=4733, "Member Removed (Local)") | table _time, host, action, TargetUserName, MemberName, SubjectUserName</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Privileged Logons (Admin Tokens)</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="WinEventLog:Security" EventCode=4672 | table _time, host, SubjectUserName, PrivilegeList | head 20</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>New Scheduled Tasks</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="WinEventLog:*" EventCode=106 | table _time, host, TaskName, UserContext</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+    <panel>
+      <title>New Services Installed</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="WinEventLog:System" EventCode=7045 | table _time, host, ServiceName, ImagePath, ServiceType</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>PowerShell Activity</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="WinEventLog:*PowerShell*" | table _time, host, UserID, ScriptBlockText | head 20</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+
+</dashboard>
