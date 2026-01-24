@@ -11,7 +11,7 @@
 # - Removed undefined function calls
 # - Simplified ports per requirements:
 #   * Web: 80, 443, 9997
-#   * Mail: 25, 587, 110, 995, 143, 993, 80, 443, 9997
+#   * Mail: 25, 587, 110, 53, 143, 80, 443, 9997
 #   * Splunk: 8000, 9997 (+ HTTP/HTTPS outbound for updates)
 ################################################################################
 
@@ -828,6 +828,7 @@ main() {
                 echo "      - HTTP (80) - webmail"
                 echo "      - HTTPS (443) - webmail"
                 echo "      - Splunk (9997)"
+                echo "      - DNS (53)"
                 ;;
             splunk)
                 echo "    SPLUNK SERVER:"
