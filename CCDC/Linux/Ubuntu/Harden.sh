@@ -123,9 +123,17 @@ harden_users() {
 # SSH HARDENING
 #===============================================================================
 harden_ssh() {
-    systemctl stop ssh
-    systemctl disable ssh
-    apt-get purge openssh-server
+ if systemctl list-unit-files | grep -q '^ssh\.service'; then
+        systemctl stop ssh.service 2>/dev/null || true
+        systemctl disable ssh.service 2>/dev/null || true
+    elif systemctl list-unit-files | grep -q '^sshd\.service'; then
+        systemctl stop sshd.service 2>/dev/null || true
+        systemctl disable sshd.service 2>/dev/null || true
+    fi
+
+    if dpkg -l | grep -q '^ii\s\+openssh-server'; then
+        apt-get purge -y openssh-server || true
+    fi
 }
 
 #===============================================================================
