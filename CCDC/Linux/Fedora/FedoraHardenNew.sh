@@ -577,36 +577,6 @@ done
 log "Disabling SSH service"
 systemctl disable --now sshd.service 2>/dev/null || true
 
-########################################
-# FIREWALL CONFIGURATION
-########################################
-log "Configuring firewalld"
-
-dnf install -y firewalld 2>/dev/null || true
-systemctl enable --now firewalld
-
-# Reset to clean state
-firewall-cmd --permanent --remove-service=ssh 2>/dev/null || true
-firewall-cmd --permanent --remove-service=dhcpv6-client 2>/dev/null || true
-firewall-cmd --permanent --remove-service=cockpit 2>/dev/null || true
-
-# Add ONLY scored services for this box
-firewall-cmd --permanent --add-service=http      # 80
-firewall-cmd --permanent --add-service=https     # 443
-firewall-cmd --permanent --add-service=smtp      # 25
-firewall-cmd --permanent --add-port=110/tcp      # POP3
-
-# Block SSH explicitly
-firewall-cmd --permanent --add-rich-rule='rule family="ipv4" port port="22" protocol="tcp" reject'
-
-# Block common attack ports
-firewall-cmd --permanent --add-rich-rule='rule family="ipv4" port port="23" protocol="tcp" reject'    # Telnet
-firewall-cmd --permanent --add-rich-rule='rule family="ipv4" port port="3389" protocol="tcp" reject'  # RDP
-firewall-cmd --permanent --add-rich-rule='rule family="ipv4" port port="5900" protocol="tcp" reject'  # VNC
-
-firewall-cmd --reload
-
-log "Firewall configured - SMTP(25), POP3(110), HTTP(80), HTTPS(443) allowed"
 
 ########################################
 # POSTFIX HARDENING
