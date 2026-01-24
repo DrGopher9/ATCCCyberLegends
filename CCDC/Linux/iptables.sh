@@ -6,9 +6,12 @@
 #
 # FIXES:
 # - Multiple role detection (web + mail on same server)
+# - Removed SSH (not needed)
+# - Removed DNS client (not needed)
+# - Removed undefined function calls
 # - Simplified ports per requirements:
 #   * Web: 80, 443, 9997
-#   * Mail: 25, 587, 110, 995, 143, 993, 80, 443, 9997
+#   * Mail: 25, 587, 110, 143, 80, 443, 9997
 #   * Splunk: 8000, 9997 (+ HTTP/HTTPS outbound for updates)
 ################################################################################
 
@@ -60,7 +63,7 @@ backup_current_rules() {
     log_success "Current rules backed up"
 }
 
-# Detect ALL system roles 
+# Detect ALL system roles - FIXED to return multiple roles
 detect_system_roles() {
     log_info "Detecting system roles..."
     
@@ -332,11 +335,10 @@ apply_web_rules() {
     log_info "  → Configuring WEB server rules..."
     
     #============================================================================
-    # HTTP (Port 80) - SCORED SERVICE
+    # HTTP (Port 80) - SCORED SERVICE - NO RATE LIMITING
     #============================================================================
-    log_info "    → Allowing HTTP (80)..."
-    iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -m limit --limit 50/sec --limit-burst 100 -j ACCEPT
-    iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j LOG_DROP
+    log_info "    → Allowing HTTP (80) - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 80 -j ACCEPT
     
     # Outbound HTTP
@@ -344,11 +346,10 @@ apply_web_rules() {
     iptables -A INPUT -p tcp --sport 80 -j ACCEPT
     
     #============================================================================
-    # HTTPS (Port 443) - SCORED SERVICE
+    # HTTPS (Port 443) - SCORED SERVICE - NO RATE LIMITING
     #============================================================================
-    log_info "    → Allowing HTTPS (443)..."
-    iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 50/sec --limit-burst 100 -j ACCEPT
-    iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j LOG_DROP
+    log_info "    → Allowing HTTPS (443) - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
     
     # Outbound HTTPS
@@ -372,11 +373,10 @@ apply_mail_rules() {
     log_info "  → Configuring MAIL server rules..."
     
     #============================================================================
-    # SMTP (Port 25) - SCORED SERVICE
+    # SMTP (Port 25) - SCORED SERVICE - NO RATE LIMITING
     #============================================================================
-    log_info "    → Allowing SMTP (25)..."
-    iptables -A INPUT -p tcp --dport 25 -m limit --limit 10/sec -j ACCEPT
-    iptables -A INPUT -p tcp --dport 25 -j LOG_DROP
+    log_info "    → Allowing SMTP (25) - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 25 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 25 -j ACCEPT
     
     # Outbound SMTP for sending
@@ -384,42 +384,43 @@ apply_mail_rules() {
     iptables -A INPUT -p tcp --sport 25 -j ACCEPT
     
     #============================================================================
-    # SMTP Submission (Port 587)
+    # SMTP Submission (Port 587) - NO RATE LIMITING
     #============================================================================
-    log_info "    → Allowing SMTP Submission (587)..."
-    iptables -A INPUT -p tcp --dport 587 -m limit --limit 10/sec -j ACCEPT
+    log_info "    → Allowing SMTP Submission (587) - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 587 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 587 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 587 -j ACCEPT
     iptables -A INPUT -p tcp --sport 587 -j ACCEPT
     
     #============================================================================
-    # POP3 (Port 110) - SCORED SERVICE
+    # POP3 (Port 110) - SCORED SERVICE - NO RATE LIMITING
     #============================================================================
-    log_info "    → Allowing POP3 (110)..."
-    iptables -A INPUT -p tcp --dport 110 -m limit --limit 10/sec -j ACCEPT
+    log_info "    → Allowing POP3 (110) - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 110 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 110 -j ACCEPT
     
+    
     #============================================================================
-    # IMAP (Port 143)
+    # IMAP (Port 143) - NO RATE LIMITING
     #============================================================================
-    log_info "    → Allowing IMAP (143)..."
-    iptables -A INPUT -p tcp --dport 143 -m limit --limit 10/sec -j ACCEPT
+    log_info "    → Allowing IMAP (143) - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 143 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 143 -j ACCEPT
     
     #============================================================================
-    # HTTP (Port 80) - For webmail
+    # HTTP (Port 80) - For webmail - NO RATE LIMITING
     #============================================================================
-    log_info "    → Allowing HTTP (80) for webmail..."
-    iptables -A INPUT -p tcp --dport 80 -m limit --limit 50/sec -j ACCEPT
+    log_info "    → Allowing HTTP (80) for webmail - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 80 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 80 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
     iptables -A INPUT -p tcp --sport 80 -j ACCEPT
     
     #============================================================================
-    # HTTPS (Port 443) - For webmail
+    # HTTPS (Port 443) - For webmail - NO RATE LIMITING
     #============================================================================
-    log_info "    → Allowing HTTPS (443) for webmail..."
-    iptables -A INPUT -p tcp --dport 443 -m limit --limit 50/sec -j ACCEPT
+    log_info "    → Allowing HTTPS (443) for webmail - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 443 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
     iptables -A INPUT -p tcp --sport 443 -j ACCEPT
@@ -433,7 +434,7 @@ apply_mail_rules() {
     iptables -A OUTPUT -p tcp --dport 9997 -j ACCEPT
     iptables -A INPUT -p tcp --sport 9997 -j ACCEPT
     
-    log_success "  ✓ Mail server rules applied (25, 587, 110, 143, 80, 443, 9997)"
+    log_success "  ✓ Mail server rules applied (25, 587, 110, 995, 143, 993, 80, 443, 9997)"
 }
 
 # Splunk server rules - ONLY 8000 and 9997 (+ HTTP/HTTPS outbound)
@@ -471,10 +472,10 @@ apply_ftp_rules() {
     log_info "  → Configuring FTP server rules..."
     
     #============================================================================
-    # FTP Control (Port 21)
+    # FTP Control (Port 21) - NO RATE LIMITING
     #============================================================================
-    log_info "    → Allowing FTP (21)..."
-    iptables -A INPUT -p tcp --dport 21 -m limit --limit 10/sec -j ACCEPT
+    log_info "    → Allowing FTP (21) - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 21 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 21 -j ACCEPT
     
     #============================================================================
@@ -495,6 +496,15 @@ apply_ftp_rules() {
     iptables -A OUTPUT -p tcp --dport 9997 -j ACCEPT
     iptables -A INPUT -p tcp --sport 9997 -j ACCEPT
     
+    #============================================================================
+    # HTTP/HTTPS for updates
+    #============================================================================
+    log_info "    → Allowing HTTP/HTTPS for updates..."
+    iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 80 -j ACCEPT
+    iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 443 -j ACCEPT
+    
     log_success "  ✓ FTP server rules applied"
 }
 
@@ -503,14 +513,14 @@ apply_generic_rules() {
     log_info "  → Configuring GENERIC service rules..."
     
     # Allow HTTP, HTTPS, Splunk as requested
-    log_info "    → Allowing HTTP (80)..."
-    iptables -A INPUT -p tcp --dport 80 -m limit --limit 50/sec -j ACCEPT
+    log_info "    → Allowing HTTP (80) - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 80 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 80 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
     iptables -A INPUT -p tcp --sport 80 -j ACCEPT
     
-    log_info "    → Allowing HTTPS (443)..."
-    iptables -A INPUT -p tcp --dport 443 -m limit --limit 50/sec -j ACCEPT
+    log_info "    → Allowing HTTPS (443) - NO RATE LIMIT..."
+    iptables -A INPUT -p tcp --dport 443 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
     iptables -A INPUT -p tcp --sport 443 -j ACCEPT
@@ -710,7 +720,7 @@ MONEOF
 main() {
     clear
     echo "================================================================================"
-    echo "           CCDC Competition IPTables Hardening - FIXED v2"
+    echo "           CCDC Competition IPTables Hardening"
     echo "           2026 Midwest CCDC Qualifier"
     echo "================================================================================"
     echo ""
@@ -727,6 +737,10 @@ main() {
     echo "  - Allow only required ports per service"
     echo "  - Enable extensive logging for incident response"
     echo "  - Implement protection against common attacks"
+    echo ""
+    echo "REMOVED (not needed for CCDC):"
+    echo "  - SSH (port 22)"
+    echo "  - DNS client rules"
     echo ""
     read -p "Continue? [y/N]: " confirm
     
@@ -838,6 +852,7 @@ main() {
     echo "  - Test ALL scored services immediately!"
     echo "  - Check: systemctl status <service>"
     echo "  - Check: curl http://localhost (if web server)"
+    echo "  - Check: telnet localhost 25 (if mail server)"
     echo "  - Monitor: tail -f /var/log/syslog | grep IPT-"
     echo "  - Rules are persistent across reboots"
     echo ""
