@@ -12,18 +12,6 @@
 # - Allow White/Black/Green Team access when requested
 # - Score tracking available via NISE portal
 # 
-# System Information from Team Pack:
-# - Ubuntu Ecom (24.04.3) - Web/Ecommerce server
-# - Fedora Webmail (42) - Email server  
-# - Splunk (Oracle Linux 9.2) - SIEM/Logging
-# - Ubuntu Wks (24.04.3) - User workstation
-# - Server 2019 AD/DNS - Domain controller
-# - Server 2019 Web - IIS web server
-# - Server 2022 FTP - File transfer server
-# - Windows 11 Wks - User workstation
-# - Palo Alto (11.0.2) - Firewall
-# - Cisco FTD (7.2.9) - Firewall
-# - VyOS Router (1.4.3) - Router
 #
 # Scored Services (from Team Pack):
 # - HTTP/HTTPS (Web servers must serve correct content)
@@ -435,13 +423,14 @@ manage_services() {
         "vsftpd"
         "tftp"
         "talk"
+        "ssh"
     )
     
     for service in "${dangerous_services[@]}"; do
         if systemctl is-active --quiet "$service" 2>/dev/null; then
             log_warn "Dangerous service detected: $service"
             # Don't auto-disable - let team decide
-            # systemctl disable --now "$service"
+            systemctl disable --now "$service"
         fi
     done
     
@@ -510,119 +499,6 @@ EOFBACKUP
     log_success "Backup system created. Run $SCRIPT_DIR/linux/backup_critical.sh as needed"
 }
 
-# Incident response preparation
-setup_incident_response() {
-    log_info "Setting up incident response tools..."
-    
-    # Create incident report template
-    cat > "$SCRIPT_DIR/incident_response/IR_TEMPLATE.txt" <<'EOFIR'
-================================================================================
-INCIDENT REPORT - 2026 MWCCDC Qualifier
-================================================================================
-
-Report ID: IR-[YYYYMMDD]-[###]
-Date/Time Detected: 
-Reported By: 
-Severity: [ ] Critical  [ ] High  [ ] Medium  [ ] Low
-
-================================================================================
-1. INCIDENT SUMMARY
-================================================================================
-Brief description of the incident:
-
-
-
-
-================================================================================
-2. DETECTION DETAILS
-================================================================================
-How was the incident detected?
-
-
-Source IP Address(es):
-
-
-Destination IP Address(es):
-
-
-Affected System(s):
-
-
-Timeline of Activity:
-- 
-- 
-- 
-
-================================================================================
-3. IMPACT ASSESSMENT
-================================================================================
-What was affected?
-
-
-Services impacted:
-
-
-Data accessed/modified:
-
-
-================================================================================
-4. EVIDENCE COLLECTED
-================================================================================
-Log files examined:
-
-
-Commands executed during investigation:
-
-
-Suspicious files found:
-
-
-Network traffic captured:
-
-
-================================================================================
-5. ROOT CAUSE ANALYSIS
-================================================================================
-How did the attacker gain access?
-
-
-Vulnerabilities exploited:
-
-
-================================================================================
-6. REMEDIATION ACTIONS TAKEN
-================================================================================
-Immediate actions:
-- 
-- 
-
-Passwords changed:
-- 
-
-Services restarted:
-- 
-
-Firewall rules added:
-- 
-
-================================================================================
-7. LESSONS LEARNED
-================================================================================
-What could have prevented this?
-
-
-Recommended improvements:
-
-
-================================================================================
-8. ADDITIONAL NOTES
-================================================================================
-
-
-================================================================================
-Report Completed By: ______________________ Date: ______________
-================================================================================
-EOFIR
     
     # Create quick investigation script
     cat > "$SCRIPT_DIR/incident_response/quick_investigate.sh" <<'EOFINV'
@@ -834,30 +710,11 @@ create_quick_reference() {
                     CCDC COMPETITION QUICK REFERENCE
 ================================================================================
 
-CRITICAL REMINDERS:
--------------------
-1. Do NOT scan other teams or Red Team (INSTANT DISQUALIFICATION)
-2. Do NOT change public IP addresses of services
-3. Do NOT change system names or internal IPs (unless inject directs)
-4. Maintain ICMP on all devices (except Palo Alto core port)
-5. Allow White/Black/Green Team access when requested
-6. Services must remain functional for scoring
-
-SCORED SERVICES:
-----------------
-- HTTP/HTTPS: Must serve correct web content
-- SMTP: Email sending and receiving
-- POP3: Email retrieval  
-- DNS: Must resolve lookups correctly
-
-Check service status: Log into NISE portal (ccdcadmin1.morainevalley.edu)
-
 IMPORTANT DIRECTORIES:
 ----------------------
 /ccdc                   - Main directory
 /ccdc/logs              - All logs and audits
 /ccdc/scripts/linux     - Hardening and management scripts
-/ccdc/scripts/incident_response - IR tools
 /ccdc/backups           - System backups
 
 KEY SCRIPTS:
@@ -876,7 +733,6 @@ Security Auditing:
 
 Incident Response:
   /ccdc/scripts/incident_response/quick_investigate.sh
-  /ccdc/scripts/incident_response/IR_TEMPLATE.txt
 
 File Integrity:
   /ccdc/scripts/linux/create_file_baseline.sh
@@ -921,10 +777,8 @@ INCIDENT RESPONSE PROCESS:
 --------------------------
 1. Detect anomaly (monitoring, alerts, service checks)
 2. Run: /ccdc/scripts/incident_response/quick_investigate.sh
-3. Document using IR_TEMPLATE.txt
-4. Take remediation action (close backdoors, change passwords, etc.)
-5. Submit incident report via NISE portal
-6. Create backup: /ccdc/scripts/linux/backup_critical.sh
+3. Take remediation action (close backdoors, change passwords, etc.)
+4. Create backup: /ccdc/scripts/linux/backup_critical.sh
 
 RED TEAM COMMON TACTICS:
 ------------------------
@@ -935,14 +789,6 @@ RED TEAM COMMON TACTICS:
 - Web shells (check web directories for suspicious .php files)
 - SSH key persistence (check ~/.ssh/authorized_keys)
 - Service hijacking (check service configs)
-
-Submit IR reports for EXPLOITATION events, not misconfigurations.
-
-PASSWORDS:
-----------
-Track all password changes in a secure document
-Admin passwords can be changed without notification
-User passwords may need to be tracked for scoring
 
 ================================================================================
                         GOOD LUCK!
@@ -1024,11 +870,6 @@ main() {
     echo "5. Review: $CCDC_DIR/logs/services_running.txt for unnecessary services"
     echo "6. Start: $SCRIPT_DIR/linux/monitor_connections.sh for network monitoring"
     echo ""
-    echo "CRITICAL REMINDERS:"
-    echo "- Do NOT scan other teams (instant disqualification)"
-    echo "- Do NOT modify public IPs or move services"
-    echo "- Maintain scored services: HTTP/HTTPS, SMTP, POP3, DNS"
-    echo "- Monitor NISE portal for injects and announcements"
     echo ""
     echo "Log file: $LOGFILE"
     echo "================================================================================"
