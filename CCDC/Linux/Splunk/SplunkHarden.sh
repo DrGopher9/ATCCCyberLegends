@@ -176,6 +176,9 @@ allowSslCompression = false
 
 [general]
 serverName = $(hostname)
+
+[httpServer]
+mgmtHostPort = 127.0.0.1:8089
 EOF
 
 # Create inputs.conf
