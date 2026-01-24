@@ -324,6 +324,9 @@ secure_permissions() {
 ### -------------------- Disable Services --------------------
 cleanup_services() {
   say "Disabling unnecessary services"
+  systemctl stop cockpit.socket cockpit 2>/dev/null || true
+  systemctl disable cockpit.socket cockpit 2>/dev/null || true
+  dnf remove -y cockpit cockpit-ws cockpit-bridge cockpit-system 2>/dev/null || true
 
   for svc in rpcbind nfs nfs-server cups avahi-daemon bluetooth postfix sendmail; do
     systemctl stop "$svc" 2>/dev/null || true
