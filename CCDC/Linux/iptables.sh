@@ -1,20 +1,15 @@
 #!/bin/bash
 
 ################################################################################
-# CCDC Competition IPTables Hardening Script
+# CCDC Competition IPTables Hardening Script - FIXED v2
 # 2026 Midwest CCDC Qualifier
 #
-# IMPORTANT: This script implements aggressive firewall rules
-# - Default DROP policy on INPUT, OUTPUT, and FORWARD
-# - Only specified ports are allowed
-# - Extensive logging for incident response
-# - Protection against common attacks
-#
-# COMPETITION REQUIREMENTS:
-# - Must maintain ICMP (ping) for scoring
-# - Must allow scored services (HTTP/HTTPS, SMTP, POP3, DNS)
-# - Must allow team management access (SSH)
-# - Should log suspicious activity for IR reports
+# FIXES:
+# - Multiple role detection (web + mail on same server)
+# - Simplified ports per requirements:
+#   * Web: 80, 443, 9997
+#   * Mail: 25, 587, 110, 995, 143, 993, 80, 443, 9997
+#   * Splunk: 8000, 9997 (+ HTTP/HTTPS outbound for updates)
 ################################################################################
 
 # Check if running as root
@@ -65,43 +60,44 @@ backup_current_rules() {
     log_success "Current rules backed up"
 }
 
-# Detect system role based on running services
-detect_system_role() {
-    log_info "Detecting system role..."
+# Detect ALL system roles 
+detect_system_roles() {
+    log_info "Detecting system roles..."
     
-    ROLE="generic"
+    local roles=()
     
     # Check for web server
     if systemctl is-active --quiet httpd || systemctl is-active --quiet apache2 || systemctl is-active --quiet nginx; then
-        ROLE="web"
-        log_info "Detected role: Web Server"
+        roles+=("web")
+        log_info "  ✓ Detected: Web Server"
     fi
     
     # Check for mail server
     if systemctl is-active --quiet postfix || systemctl is-active --quiet sendmail || systemctl is-active --quiet dovecot; then
-        ROLE="mail"
-        log_info "Detected role: Mail Server"
-    fi
-    
-    # Check for DNS server
-    if systemctl is-active --quiet named || systemctl is-active --quiet bind9; then
-        ROLE="dns"
-        log_info "Detected role: DNS Server"
+        roles+=("mail")
+        log_info "  ✓ Detected: Mail Server"
     fi
     
     # Check for Splunk
     if systemctl is-active --quiet splunk || systemctl is-active --quiet splunkd; then
-        ROLE="splunk"
-        log_info "Detected role: Splunk/SIEM Server"
+        roles+=("splunk")
+        log_info "  ✓ Detected: Splunk/SIEM Server"
     fi
     
     # Check for FTP
     if systemctl is-active --quiet vsftpd || systemctl is-active --quiet proftpd; then
-        ROLE="ftp"
-        log_info "Detected role: FTP Server"
+        roles+=("ftp")
+        log_info "  ✓ Detected: FTP Server"
     fi
     
-    echo "$ROLE"
+    # If no roles detected, default to generic
+    if [ ${#roles[@]} -eq 0 ]; then
+        roles+=("generic")
+        log_info "  → No specific services detected, using generic rules"
+    fi
+    
+    # Return roles as space-separated string
+    echo "${roles[@]}"
 }
 
 # Create custom chains for better organization and logging
@@ -123,12 +119,6 @@ create_custom_chains() {
     iptables -A INVALID_DROP -m limit --limit 5/min -j LOG --log-prefix "IPT-INVALID: " --log-level 4
     iptables -A INVALID_DROP -j DROP
     
-    # Chain for rate limiting (anti-DDoS)
-    iptables -N RATE_LIMIT 2>/dev/null || iptables -F RATE_LIMIT
-    iptables -A RATE_LIMIT -m limit --limit 10/sec --limit-burst 20 -j RETURN
-    iptables -A RATE_LIMIT -m limit --limit 5/min -j LOG --log-prefix "IPT-RATE-LIMIT: " --log-level 4
-    iptables -A RATE_LIMIT -j DROP
-    
     # Chain for port scanning detection
     iptables -N PORT_SCAN 2>/dev/null || iptables -F PORT_SCAN
     iptables -A PORT_SCAN -m recent --set --name portscan
@@ -139,12 +129,6 @@ create_custom_chains() {
     iptables -N BAD_TCP 2>/dev/null || iptables -F BAD_TCP
     iptables -A BAD_TCP -m limit --limit 5/min -j LOG --log-prefix "IPT-BAD-TCP: " --log-level 4
     iptables -A BAD_TCP -j DROP
-    
-    # Chain for SSH brute force protection
-    iptables -N SSH_PROTECT 2>/dev/null || iptables -F SSH_PROTECT
-    iptables -A SSH_PROTECT -m recent --name ssh_attack --rcheck --seconds 60 --hitcount 4 -j LOG_DROP
-    iptables -A SSH_PROTECT -m recent --name ssh_attack --set
-    iptables -A SSH_PROTECT -j ACCEPT
     
     log_success "Custom chains created"
 }
@@ -274,18 +258,6 @@ apply_base_rules() {
     iptables -A OUTPUT -p icmp --icmp-type time-exceeded -j ACCEPT
     
     #============================================================================
-    # ANTI-SPOOFING (RFC 1918 Private Networks)
-    #============================================================================
-    log_info "  → Configuring anti-spoofing rules..."
-    
-    # Note: In CCDC, internal networks use private IPs
-    # Only block spoofed packets from OUTSIDE (WAN interface)
-    # This is tricky - need to identify WAN interface
-    
-    # Block packets from outside claiming to be from internal networks
-    # (Only if we can identify external interface - skip for now to be safe)
-    
-    #============================================================================
     # FRAGMENTED PACKETS
     #============================================================================
     log_info "  → Protecting against fragmented packet attacks..."
@@ -329,85 +301,80 @@ apply_base_rules() {
     log_success "Base rules applied"
 }
 
-
-# Service-specific rules based on system role
+# Apply service-specific rules - FIXED to handle multiple roles
 apply_service_rules() {
-    local role=$1
-    log_info "Applying service rules for role: $role..."
+    local roles=("$@")
+    log_info "Applying service rules for detected roles..."
     
-    case $role in
-        web)
-            apply_web_rules
-            ;;
-        mail)
-            apply_mail_rules
-            ;;
-        dns)
-            apply_dns_rules
-            ;;
-        splunk)
-            apply_splunk_rules
-            ;;
-        ftp)
-            apply_ftp_rules
-            ;;
-        *)
-            apply_generic_rules
-            ;;
-    esac
+    for role in "${roles[@]}"; do
+        case $role in
+            web)
+                apply_web_rules
+                ;;
+            mail)
+                apply_mail_rules
+                ;;
+            splunk)
+                apply_splunk_rules
+                ;;
+            ftp)
+                apply_ftp_rules
+                ;;
+            generic)
+                apply_generic_rules
+                ;;
+        esac
+    done
 }
 
-# Web server rules
+# Web server rules - ONLY 80, 443, 9997
 apply_web_rules() {
-    log_info "  → Configuring web server rules (HTTP/HTTPS)..."
+    log_info "  → Configuring WEB server rules..."
     
     #============================================================================
     # HTTP (Port 80) - SCORED SERVICE
     #============================================================================
-    # Inbound HTTP with rate limiting
+    log_info "    → Allowing HTTP (80)..."
     iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -m limit --limit 50/sec --limit-burst 100 -j ACCEPT
     iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j LOG_DROP
     iptables -A OUTPUT -p tcp --sport 80 -j ACCEPT
     
-    # Outbound HTTP (for updates, etc.)
+    # Outbound HTTP
     iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
     iptables -A INPUT -p tcp --sport 80 -j ACCEPT
     
     #============================================================================
     # HTTPS (Port 443) - SCORED SERVICE
     #============================================================================
-    # Inbound HTTPS with rate limiting
+    log_info "    → Allowing HTTPS (443)..."
     iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 50/sec --limit-burst 100 -j ACCEPT
     iptables -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j LOG_DROP
     iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
     
-    # Outbound HTTPS (for updates, etc.)
+    # Outbound HTTPS
     iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
     iptables -A INPUT -p tcp --sport 443 -j ACCEPT
     
     #============================================================================
-    # SPLUNK FORWARDER (Port 9997) - AS REQUESTED
+    # SPLUNK FORWARDER (Port 9997)
     #============================================================================
-    log_info "  → Allowing Splunk forwarder (9997)..."
-    
-    # Inbound Splunk forwarding
+    log_info "    → Allowing Splunk forwarder (9997)..."
     iptables -A INPUT -p tcp --dport 9997 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 9997 -j ACCEPT
-    
-    # Outbound Splunk forwarding
     iptables -A OUTPUT -p tcp --dport 9997 -j ACCEPT
     iptables -A INPUT -p tcp --sport 9997 -j ACCEPT
     
-    log_success "Web server rules applied (80, 443, 9997)"
+    log_success "  ✓ Web server rules applied (80, 443, 9997)"
 }
 
-# Mail server rules
+# Mail server rules - SMTP, POP3, IMAP, HTTP, HTTPS, 9997
 apply_mail_rules() {
-    log_info "  → Configuring mail server rules..."
+    log_info "  → Configuring MAIL server rules..."
     
     #============================================================================
     # SMTP (Port 25) - SCORED SERVICE
     #============================================================================
+    log_info "    → Allowing SMTP (25)..."
     iptables -A INPUT -p tcp --dport 25 -m limit --limit 10/sec -j ACCEPT
     iptables -A INPUT -p tcp --dport 25 -j LOG_DROP
     iptables -A OUTPUT -p tcp --sport 25 -j ACCEPT
@@ -419,60 +386,84 @@ apply_mail_rules() {
     #============================================================================
     # SMTP Submission (Port 587)
     #============================================================================
+    log_info "    → Allowing SMTP Submission (587)..."
     iptables -A INPUT -p tcp --dport 587 -m limit --limit 10/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 587 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 587 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 587 -j ACCEPT
     
     #============================================================================
     # POP3 (Port 110) - SCORED SERVICE
     #============================================================================
+    log_info "    → Allowing POP3 (110)..."
     iptables -A INPUT -p tcp --dport 110 -m limit --limit 10/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 110 -j ACCEPT
     
     #============================================================================
-    # IMAP (Ports 143/993) - May be used instead of POP3
+    # IMAP (Port 143)
     #============================================================================
+    log_info "    → Allowing IMAP (143)..."
     iptables -A INPUT -p tcp --dport 143 -m limit --limit 10/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 143 -j ACCEPT
     
     #============================================================================
+    # HTTP (Port 80) - For webmail
+    #============================================================================
+    log_info "    → Allowing HTTP (80) for webmail..."
+    iptables -A INPUT -p tcp --dport 80 -m limit --limit 50/sec -j ACCEPT
+    iptables -A OUTPUT -p tcp --sport 80 -j ACCEPT
+    iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 80 -j ACCEPT
+    
+    #============================================================================
+    # HTTPS (Port 443) - For webmail
+    #============================================================================
+    log_info "    → Allowing HTTPS (443) for webmail..."
+    iptables -A INPUT -p tcp --dport 443 -m limit --limit 50/sec -j ACCEPT
+    iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
+    iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 443 -j ACCEPT
+    
+    #============================================================================
     # SPLUNK FORWARDER (Port 9997)
     #============================================================================
+    log_info "    → Allowing Splunk forwarder (9997)..."
     iptables -A INPUT -p tcp --dport 9997 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 9997 -j ACCEPT
     iptables -A OUTPUT -p tcp --dport 9997 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 9997 -j ACCEPT
     
-    # Also allow HTTP/HTTPS for webmail
-    iptables -A INPUT -p tcp --dport 80 -m limit --limit 50/sec -j ACCEPT
-    iptables -A INPUT -p tcp --dport 443 -m limit --limit 50/sec -j ACCEPT
-    iptables -A OUTPUT -p tcp --sport 80 -j ACCEPT
-    iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
-    
-    log_success "Mail server rules applied"
+    log_success "  ✓ Mail server rules applied (25, 587, 110, 143, 80, 443, 9997)"
 }
 
-# Splunk server rules
+# Splunk server rules - ONLY 8000 and 9997 (+ HTTP/HTTPS outbound)
 apply_splunk_rules() {
-    log_info "  → Configuring Splunk server rules..."
+    log_info "  → Configuring SPLUNK server rules..."
     
     #============================================================================
     # SPLUNK WEB (Port 8000)
     #============================================================================
+    log_info "    → Allowing Splunk Web (8000)..."
     iptables -A INPUT -p tcp --dport 8000 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 8000 -j ACCEPT
     
     #============================================================================
     # SPLUNK FORWARDER (Port 9997) - Receiving logs
     #============================================================================
+    log_info "    → Allowing Splunk forwarder (9997)..."
     iptables -A INPUT -p tcp --dport 9997 -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 9997 -j ACCEPT
     
     #============================================================================
-    # HTTP/HTTPS for updates
+    # HTTP/HTTPS outbound for updates
     #============================================================================
+    log_info "    → Allowing HTTP/HTTPS outbound for updates..."
     iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 80 -j ACCEPT
+    iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 443 -j ACCEPT
     
-    log_success "Splunk server rules applied"
+    log_success "  ✓ Splunk server rules applied (8000, 9997)"
 }
 
 # FTP server rules
@@ -482,15 +473,16 @@ apply_ftp_rules() {
     #============================================================================
     # FTP Control (Port 21)
     #============================================================================
+    log_info "    → Allowing FTP (21)..."
     iptables -A INPUT -p tcp --dport 21 -m limit --limit 10/sec -j ACCEPT
     iptables -A OUTPUT -p tcp --sport 21 -j ACCEPT
     
     #============================================================================
     # FTP Passive Mode (High ports)
     #============================================================================
-    # Note: Passive FTP uses random high ports - need conntrack helper
+    log_info "    → Configuring FTP passive mode..."
     # Load FTP connection tracking module
-    modprobe nf_conntrack_ftp
+    modprobe nf_conntrack_ftp 2>/dev/null
     
     # Allow passive FTP data connections
     iptables -A INPUT -p tcp --dport 1024:65535 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
@@ -499,14 +491,16 @@ apply_ftp_rules() {
     #============================================================================
     # SPLUNK FORWARDER
     #============================================================================
+    log_info "    → Allowing Splunk forwarder (9997)..."
     iptables -A OUTPUT -p tcp --dport 9997 -j ACCEPT
+    iptables -A INPUT -p tcp --sport 9997 -j ACCEPT
     
-    log_success "FTP server rules applied"
+    log_success "  ✓ FTP server rules applied"
 }
 
 # Generic rules (when role can't be determined)
 apply_generic_rules() {
-    log_info "  → Configuring generic service rules..."
+    log_info "  → Configuring GENERIC service rules..."
     
     # Allow HTTP, HTTPS, Splunk as requested
     log_info "    → Allowing HTTP (80)..."
@@ -527,7 +521,7 @@ apply_generic_rules() {
     iptables -A OUTPUT -p tcp --dport 9997 -j ACCEPT
     iptables -A INPUT -p tcp --sport 9997 -j ACCEPT
     
-    log_success "Generic service rules applied (80, 443, 9997)"
+    log_success "  ✓ Generic service rules applied (80, 443, 9997)"
 }
 
 # Final logging and drop rules
@@ -556,18 +550,18 @@ save_rules() {
     # Determine the system type and save accordingly
     if [ -f /etc/debian_version ]; then
         # Debian/Ubuntu
+        mkdir -p /etc/iptables
+        iptables-save > /etc/iptables/rules.v4
+        ip6tables-save > /etc/iptables/rules.v6
+        
         if command -v netfilter-persistent &> /dev/null; then
             netfilter-persistent save
-        elif command -v iptables-save &> /dev/null; then
-            iptables-save > /etc/iptables/rules.v4
-            ip6tables-save > /etc/iptables/rules.v6
         fi
     elif [ -f /etc/redhat-release ]; then
         # RHEL/CentOS/Fedora
-        if command -v iptables-save &> /dev/null; then
-            iptables-save > /etc/sysconfig/iptables
-            ip6tables-save > /etc/sysconfig/ip6tables
-        fi
+        mkdir -p /etc/sysconfig
+        iptables-save > /etc/sysconfig/iptables
+        ip6tables-save > /etc/sysconfig/ip6tables
     fi
     
     # Also save to CCDC directory
@@ -607,15 +601,10 @@ display_rules() {
     log_info "Current iptables rules:"
     echo ""
     echo "=== INPUT Chain ==="
-    iptables -L INPUT -v -n --line-numbers
+    iptables -L INPUT -v -n --line-numbers | head -50
     echo ""
     echo "=== OUTPUT Chain ==="
-    iptables -L OUTPUT -v -n --line-numbers
-    echo ""
-    echo "=== Custom Chains ==="
-    iptables -L LOG_DROP -v -n --line-numbers 2>/dev/null
-    iptables -L LOG_ACCEPT -v -n --line-numbers 2>/dev/null
-    iptables -L SSH_PROTECT -v -n --line-numbers 2>/dev/null
+    iptables -L OUTPUT -v -n --line-numbers | head -50
     echo ""
 }
 
@@ -635,9 +624,6 @@ iptables -L -v -n --line-numbers
 echo ""
 echo "=== NAT Table ==="
 iptables -t nat -L -v -n --line-numbers
-echo ""
-echo "=== Mangle Table ==="
-iptables -t mangle -L -v -n --line-numbers
 SHOWEOF
     chmod +x /ccdc/scripts/firewall/show_rules.sh
     
@@ -699,6 +685,8 @@ PROTO=$2
 echo "Adding temporary rule to allow $PROTO/$PORT..."
 iptables -I INPUT -p $PROTO --dport $PORT -j ACCEPT
 iptables -I OUTPUT -p $PROTO --sport $PORT -j ACCEPT
+iptables -I OUTPUT -p $PROTO --dport $PORT -j ACCEPT
+iptables -I INPUT -p $PROTO --sport $PORT -j ACCEPT
 
 echo "Rule added. View with: iptables -L -n | grep $PORT"
 echo "To save: iptables-save > /ccdc/backups/iptables/current-rules.v4"
@@ -722,7 +710,7 @@ MONEOF
 main() {
     clear
     echo "================================================================================"
-    echo "           CCDC Competition IPTables Hardening"
+    echo "           CCDC Competition IPTables Hardening - FIXED v2"
     echo "           2026 Midwest CCDC Qualifier"
     echo "================================================================================"
     echo ""
@@ -735,7 +723,8 @@ main() {
     echo ""
     echo "This script will:"
     echo "  - Set default DROP policy on INPUT, OUTPUT, and FORWARD"
-    echo "  - Allow only specified ports (80, 443, 9997, and service-specific)"
+    echo "  - Detect ALL running services (can be multiple)"
+    echo "  - Allow only required ports per service"
     echo "  - Enable extensive logging for incident response"
     echo "  - Implement protection against common attacks"
     echo ""
@@ -761,17 +750,15 @@ main() {
     # Execute configuration steps
     backup_current_rules
     
-    # Detect role
-    SYSTEM_ROLE=$(detect_system_role)
+    # Detect ALL roles (can be multiple) - FIXED
+    SYSTEM_ROLES=($(detect_system_roles))
     echo ""
     
     flush_rules
     create_custom_chains
     set_default_policies
     apply_base_rules
-    apply_management_rules
-    apply_service_rules "$SYSTEM_ROLE"
-    apply_ntp_rules
+    apply_service_rules "${SYSTEM_ROLES[@]}"  # Pass array of roles
     apply_final_rules
     save_rules
     create_firewall_service
@@ -783,27 +770,49 @@ main() {
     echo "================================================================================"
     echo ""
     echo "CONFIGURATION SUMMARY:"
-    echo "  System Role: $SYSTEM_ROLE"
+    echo "  Detected Roles: ${SYSTEM_ROLES[@]}"
     echo "  Default Policy: DROP (all chains)"
+    echo ""
     echo "  Allowed Services:"
-    echo "    - HTTP (80) - SCORED SERVICE"
-    echo "    - HTTPS (443) - SCORED SERVICE"
-    echo "    - Splunk (9997)"
     
-    case $SYSTEM_ROLE in
-        mail)
-            echo "    - SMTP (25, 587) - SCORED SERVICE"
-            echo "    - POP3 (110) - SCORED SERVICE"
-            echo "    - IMAP (143)"
-            ;;
-        splunk)
-            echo "    - Splunk Web (8000)"
-            ;;
-        ftp)
-            echo "    - FTP (21, 990)"
-            echo "    - FTP Passive (high ports)"
-            ;;
-    esac
+    # Show what was configured based on roles
+    for role in "${SYSTEM_ROLES[@]}"; do
+        case $role in
+            web)
+                echo "    WEB SERVER:"
+                echo "      - HTTP (80) - SCORED SERVICE"
+                echo "      - HTTPS (443) - SCORED SERVICE"
+                echo "      - Splunk (9997)"
+                ;;
+            mail)
+                echo "    MAIL SERVER:"
+                echo "      - SMTP (25, 587) - SCORED SERVICE"
+                echo "      - POP3 (110) - SCORED SERVICE"
+                echo "      - IMAP (143)"
+                echo "      - HTTP (80) - webmail"
+                echo "      - HTTPS (443) - webmail"
+                echo "      - Splunk (9997)"
+                ;;
+            splunk)
+                echo "    SPLUNK SERVER:"
+                echo "      - Splunk Web (8000)"
+                echo "      - Splunk Forwarder (9997)"
+                echo "      - HTTP/HTTPS (outbound only for updates)"
+                ;;
+            ftp)
+                echo "    FTP SERVER:"
+                echo "      - FTP (21)"
+                echo "      - FTP Passive (high ports)"
+                echo "      - Splunk (9997)"
+                ;;
+            generic)
+                echo "    GENERIC (no specific service detected):"
+                echo "      - HTTP (80)"
+                echo "      - HTTPS (443)"
+                echo "      - Splunk (9997)"
+                ;;
+        esac
+    done
     
     echo ""
     echo "  Protection Features:"
@@ -811,7 +820,6 @@ main() {
     echo "    ✓ Bad TCP flag detection"
     echo "    ✓ Port scan detection"
     echo "    ✓ SYN flood protection"
-    echo "    ✓ SSH brute-force protection"
     echo "    ✓ Rate limiting on services"
     echo "    ✓ Fragment attack protection"
     echo "    ✓ Extensive logging"
@@ -827,10 +835,11 @@ main() {
     echo "    /ccdc/backups/iptables/"
     echo ""
     echo "IMPORTANT REMINDERS:"
-    echo "  - Test ALL scored services immediately"
-    echo "  - Monitor /var/log/syslog for IPT- prefixed entries"
+    echo "  - Test ALL scored services immediately!"
+    echo "  - Check: systemctl status <service>"
+    echo "  - Check: curl http://localhost (if web server)"
+    echo "  - Monitor: tail -f /var/log/syslog | grep IPT-"
     echo "  - Rules are persistent across reboots"
-    echo "  - Use allow_port_temp.sh to quickly allow additional ports"
     echo ""
     echo "Log file: $LOGFILE"
     echo "================================================================================"
@@ -842,6 +851,14 @@ main() {
         echo ""
         display_rules
     fi
+    
+    echo ""
+    echo -e "${YELLOW}NEXT STEPS:${NC}"
+    echo "1. Test all services immediately"
+    echo "2. If service is down, check: systemctl status <service>"
+    echo "3. Check firewall logs: grep 'IPT-' /var/log/syslog | tail -20"
+    echo "4. If needed, use: /ccdc/scripts/firewall/allow_port_temp.sh <port> tcp"
+    echo ""
 }
 
 # Run main function
