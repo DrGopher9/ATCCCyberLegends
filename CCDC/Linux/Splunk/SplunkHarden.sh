@@ -44,8 +44,8 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 # --- CONFIGURATION VARIABLES ---
-SPLUNK_VERSION="10.2.0"
-SPLUNK_BUILD="d749cb17ea65"
+SPLUNK_VERSION="10.2.2"
+SPLUNK_BUILD="80b90d638de6"
 SPLUNK_HOME="/opt/splunk"
 SPLUNK_PKG="splunk-${SPLUNK_VERSION}-${SPLUNK_BUILD}.x86_64.rpm"
 SPLUNK_URL="https://download.splunk.com/products/splunk/releases/${SPLUNK_VERSION}/linux/${SPLUNK_PKG}"
