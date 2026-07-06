@@ -25,6 +25,7 @@ closes.
 | The **captain** organizing the squad | [`03-team-roles-and-comms.md`](03-team-roles-and-comms.md) |
 | Running **this week's** practice | [`04-curriculum/`](04-curriculum/) → the current phase → the week module |
 | Building the **next** week's module | [`templates/module-template.md`](templates/module-template.md) |
+| Needing the **real competition facts** (topology, scored services, rules) | [`07-competition-reference.md`](07-competition-reference.md) |
 | Wondering what's **broken in the repo** | [`06-repo-gaps-backlog.md`](06-repo-gaps-backlog.md) |
 
 ## The season at a glance
@@ -65,9 +66,11 @@ Two gates, both in [`02-readiness-rubric.md`](02-readiness-rubric.md):
 
 - **Reference, don't copy.** When a module needs a hardening step, it points at the real script in
   `CCDC_2026/` or `CCDC-main-Matt_2026/` rather than duplicating it.
-- **Confirm the rules.** Where a CCDC rule or scored-service list is uncertain, docs say *"confirm
-  against the current MN/Midwest team packet"* — the packets change yearly. Current packets:
+- **Confirm the rules.** The competition facts are reconciled from the 2026 packet into
+  [`07-competition-reference.md`](07-competition-reference.md) — start there. The packets change yearly;
+  when the **2027** MN packet is published, re-read it and update `07`. Source packets:
   `CCDC_2026/2026MWCCDCQTeamPack.pdf` and `CCDC-main-Matt_2026/CCDC-main/MWCC DCQ Team Pack.pdf`.
+  Note the repo's `Claude.md` topology is **outdated** vs. the packet (see backlog item 5).
 - **Defensive only.** This is a blue-team program. Offensive tooling exists solely so the coach/alumni
   red team can pressure-test the squad in the lab. See the rules of engagement in
   [`CCDC-main-Matt_2026/CCDC-main/Claude.md`](../CCDC-main-Matt_2026/CCDC-main/Claude.md).

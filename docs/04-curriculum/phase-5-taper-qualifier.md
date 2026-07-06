@@ -11,13 +11,18 @@ themselves the final week. Sharpness beats volume now.
 
 - **No new content. No exhausting scrimmages the final week.** Light skill-maintenance drills only —
   keep the credential sweep, persistence sweep, and first-30-minutes runbook warm.
-- **Lock the roster:** starting 8 + alternates, roles confirmed, backups confirmed.
-- **Logistics:** travel, setup time, equipment, accounts, what's allowed in-room (*confirm the rules
-  packet*).
+- **Lock the roster:** **8 compete** (min 4, max 2 grad students) + alternates on the 12-person roster,
+  roles confirmed, backups confirmed.
+- **Submit the team GitHub repo URL to the State Director before the event** — that's the only way the
+  repo is reachable through the competition web proxy on game day (packet rule). Miss this and you go
+  in without your scripts/runbooks.
+- **Logistics:** travel, setup time, accounts, what's allowed in-room. **Printed reference materials
+  are allowed; no USB/media.** Times are **CST**. Confirm against the 2027 packet when published — see
+  [`../07-competition-reference.md`](../07-competition-reference.md).
 - **Prepare the in-competition kit** (print/stage): quick-reference, first-30-minutes runbook, inject
   templates, change-log, password tracker, contact list, scored-service list.
-- **Pre-competition brief:** rules review, comms plan, "if X breaks, who owns it," and the injects
-  ownership.
+- **Pre-competition brief:** rules review, comms plan, "if X breaks, who owns it," inject ownership,
+  and that **inject responses are submitted as PDFs** in the NISE/Team Portal.
 - **Rest.** A rested team makes fewer self-inflicted mistakes than a fried one.
 
 ### In-competition kit checklist

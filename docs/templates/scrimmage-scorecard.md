@@ -4,8 +4,9 @@ Score every scrimmage (Phase 3 on) so progress is measurable and the capstone ga
 [`../02-readiness-rubric.md`](../02-readiness-rubric.md) is objective. The White Team judge / coach
 fills this in; share it in the AAR ([`aar-template.md`](aar-template.md)).
 
-Mirror the real competition scoring model where known — **confirm weights against the current
-MN/Midwest team packet.** The structure below matches the capstone thresholds.
+Mirror the real scoring model (from [`../07-competition-reference.md`](../07-competition-reference.md)):
+**uptime 35–50% · injects 35–50% · exploitation/IR 10–20%.** Confirm exact weights against the current
+packet. The structure below matches the capstone thresholds. Run scrimmages as a **~7-hour single day.**
 
 ---
 
@@ -14,18 +15,18 @@ MN/Midwest team packet.** The structure below matches the capstone thresholds.
 - **Captain:** ___
 
 ## 1. Scored-service uptime
-Record up/down per scored service across the window. Target: **≥ 90%** each.
+Record up/down per scored service across the window. Target: **≥ 90%** each. Services per the packet
+([`../07-competition-reference.md`](../07-competition-reference.md)); confirm the exact scored set on
+the Team Portal at game time.
 
-| Service | System | Uptime % | Notes (when down / why) |
+| Service | Host (likely) | Uptime % | Notes (when down / why) |
 |---|---|---|---|
-| AD auth | Windows AD | | |
-| DNS | Windows AD | | |
-| DHCP | Windows AD | | |
-| HTTP/HTTPS | E-Commerce | | |
-| Database | E-Commerce | | |
-| SMTP/IMAP | Email | | |
-| Webmail | Fedora | | |
-| Splunk | Splunk | | |
+| HTTP | Server 2019 Web (IIS) / Ubuntu Ecom | | |
+| HTTPS | Server 2019 Web (IIS) / Ubuntu Ecom | | |
+| SMTP | Fedora Webmail | | |
+| POP3 (AD auth) | Fedora Webmail | | |
+| DNS | Server 2019 AD/DNS | | |
+| FTP (if scored) | Server 2022 FTP | | |
 
 **Team uptime (avg):** ___%
 
@@ -44,7 +45,10 @@ Any scored service the **team's own change** took down. List each — these are 
 **Injects on time:** ___ / ___  · **Avg quality:** ___
 
 ## 4. Red-team footholds (target: 100% detected + evicted + reported)
-| # | System | What they got in with | Detected? | Evicted? | Reported? |
+"Reported" = a **scorable incident report** filed: source/dest IP, timeline, passwords cracked, what
+was affected, remediation plan — exploitation, not misconfiguration (packet IR spec, rubric T2-I3).
+
+| # | System | What they got in with | Detected? | Evicted? | IR filed (to spec)? |
 |---|---|---|---|---|---|
 | | | | | | |
 

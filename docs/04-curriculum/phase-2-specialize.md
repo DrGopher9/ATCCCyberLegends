@@ -6,8 +6,11 @@ attacking it **live in the lab.**
 **Council lens:** the Red Teamer owns this phase. Every module opens with an attack so students feel
 the threat before they memorize the defense. Everyone keeps the Core sharp via weekly warm-ups.
 
-**Specialty tracks:** Windows AD/DNS/DHCP · E-Commerce (Ubuntu) · Email+Webmail (Fedora) · Palo Alto
-firewall · Splunk SIEM. Map to roles in [`03-team-roles-and-comms.md`](../03-team-roles-and-comms.md).
+**Specialty tracks (actual boxes — see [`07-competition-reference.md`](../07-competition-reference.md)):**
+Windows AD/DNS (Server 2019) · Windows Web/FTP (IIS + Server 2022) · E-Commerce (Ubuntu) ·
+Email/Webmail (Fedora, SMTP/POP3) · Network (Palo Alto + Cisco FTD + VyOS) · Splunk SIEM. Map to roles
+in [`03-team-roles-and-comms.md`](../03-team-roles-and-comms.md) and rubric tracks in
+[`02-readiness-rubric.md`](../02-readiness-rubric.md).
 
 **Exit gate:** each member passes their **Tier-3 specialty track** in
 [`02-readiness-rubric.md`](../02-readiness-rubric.md).

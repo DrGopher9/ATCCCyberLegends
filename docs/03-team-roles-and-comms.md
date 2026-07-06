@@ -12,19 +12,26 @@ equal; the starting 8 is earned, not assigned by seniority.
 
 ## Roles (the competition 8)
 
+Boxes map to the **actual 11-VM topology** in [`07-competition-reference.md`](07-competition-reference.md)
+(6 servers, 2 workstations, Palo Alto + Cisco FTD + VyOS). More boxes than people, so some roles own
+two.
+
 | Role | Owns | Backs up | Rubric track |
 |---|---|---|---|
 | **Captain** | Coordination, injects relationship, White Team contact, the clock, morale | *Everything* (knows enough to redirect, doesn't fix) | T3 of their secondary box |
-| **Windows AD Lead** | AD, DNS, DHCP | Firewall | T3-AD |
-| **E-Commerce Lead** | Ubuntu web/app/DB | Email | T3-EC |
-| **Email/Webmail Lead** | Fedora mail + webmail | E-Commerce | T3-EM |
-| **Firewall/Network Lead** | Palo Alto, connectivity | Windows AD | T3-FW |
+| **Windows AD Lead** | AD/DNS (Server 2019, `.102`); Windows 11 Wks | Windows Web/FTP | T3-AD |
+| **Windows Web/FTP Lead** | Server 2019 Web/IIS (`.101`), Server 2022 FTP (`.104`) | Windows AD | T3-WEB |
+| **E-Commerce Lead** | Ubuntu Ecom (`.30`, HTTP/HTTPS); Ubuntu Wks | Email | T3-EC |
+| **Email/Webmail Lead** | Fedora mail + webmail (`.40`, SMTP/POP3) | E-Commerce | T3-EM |
+| **Network Lead** | Palo Alto, Cisco FTD, VyOS router, connectivity | Windows AD | T3-NET |
 | **Splunk/Monitoring Lead** | SIEM, dashboards, forwarders, the team's "eyes" | Any Linux box | T3-SP |
-| **Floater / IR** | Roves to the hottest fire; runs incident response | Whichever box is under attack | Passes 2 T3 tracks |
-| **Injects/Docs** | Inject execution, documentation, change-log discipline | Captain | T2-I1/I2 + one T3 |
+| **Injects/Docs + IR** | Inject execution, documentation, incident reports (the scored 10–20%) | Captain | T2-I1/I2/I3 + one T3 |
 
-> Small-team fallback: on a thin roster, merge Injects/Docs into the Captain and Floater into
-> Monitoring. The existing team-roles doc has function-based options too.
+> That's 8 seats for a two-segment network (Palo Alto side: Ecom, Webmail, Splunk, Ubuntu Wks; Cisco
+> FTD side: AD/DNS, Web, FTP, Win11). A **Floater/IR** role emerges naturally from whoever is least
+> loaded at any moment — in a 7-hour single-day event the captain re-assigns rovers as fires shift.
+> Small-team fallback: merge Injects/Docs+IR into the Captain and fold Web/FTP into AD. The existing
+> team-roles doc has function-based options too.
 
 ### The Captain does not touch keyboards
 
@@ -83,13 +90,18 @@ per active incident.** The Floater/IR assists; the owner decides.
 Drilled until it needs no checklist (Red Teamer's non-negotiable). Every member, in parallel on their
 box:
 
-1. **Credential sweep** — rotate every password/key; kill unknown accounts (T2-C1/C2/C3).
+1. **Credential sweep** — every box ships with a **known default password** (see the table in
+   [`07-competition-reference.md`](07-competition-reference.md)); the Red Team has these too. Rotate
+   every password/key, kill unknown accounts (T2-C1/C2/C3). Admin/root/sysadmin change freely; be
+   careful with AD accounts (POP3/mail auth uses them).
 2. **Persistence sweep** — cron/scheduled tasks/services/UID-0/authorized_keys
    ([persistence-hunting](../CCDC-main-Matt_2026/CCDC-main/competition-tools/persistence-hunting.md)).
-3. **Firewall up** — host firewall / Palo Alto policy, scored services allowed, everything verified
-   still up (T2-C4/C6).
+3. **Firewall up** — host firewalls + Palo Alto/Cisco FTD policy, scored services allowed, everything
+   verified still up (T2-C4/C6). **Keep ICMP up everywhere except the Palo Alto core port** — the
+   scoring engine needs it. Anything that breaks a scoring check is *your* point loss.
 4. **Logging on** — confirm the Splunk forwarder reports (T2-S1).
-5. **Back up** — config/state backup before heavy hardening.
+5. **Back up** — config/state backup before heavy hardening. **There is no snapshot/revert** — cold
+   boot only, and VM scrubs are limited to 3 (penalized). If you break it, you own fixing it.
 6. **Log it** — every change in the change-log from minute one.
 
 Captain simultaneously: confirm White Team contact, watch for the first injects, track who's done with

@@ -44,7 +44,9 @@ Cover, simply:
   down, red-team compromises, rule violations, unprofessional conduct).
 - **The counter-intuitive truth:** most rookie teams lose points to *themselves* (breaking their own
   services, missing injects) more than to the red team. That's what this whole season fixes.
-- Show the topology from [`../../CCDC-main-Matt_2026/CCDC-main/Claude.md`](../../CCDC-main-Matt_2026/CCDC-main/Claude.md).
+- Show the real topology and scored services from [`../07-competition-reference.md`](../07-competition-reference.md)
+  (11 VMs, two firewalls + a router; scored services HTTP/HTTPS/SMTP/POP3/DNS). Don't use the repo's
+  `Claude.md` diagram — it's outdated.
 
 ### 0:45–1:15 — Rules of Engagement (the load-bearing part)
 Walk the **Forbidden / Allowed** lists in [`Claude.md`](../../CCDC-main-Matt_2026/CCDC-main/Claude.md)

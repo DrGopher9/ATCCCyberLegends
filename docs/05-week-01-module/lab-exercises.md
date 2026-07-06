@@ -95,15 +95,17 @@ ip a              # what's my IP / network?
 ss -tlnp          # what services are listening here?
 ```
 
-On the topology diagram (from [`Claude.md`](../../CCDC-main-Matt_2026/CCDC-main/Claude.md)), find and
-note:
-- The **firewall** (Palo Alto)
-- The **Windows AD** server
-- The **E-Commerce** (Ubuntu) box
-- The **Email / Webmail** (Fedora) box
-- **Splunk**
+Using the topology table in [`../07-competition-reference.md`](../07-competition-reference.md), find and
+note where these live (there are **11 VMs**):
+- The **two firewalls** (Palo Alto `172.20.242.254`, Cisco FTD `172.20.240.254`) and the **VyOS router**
+- The **Windows AD/DNS** server (`172.20.240.102`) and **Windows Web** (`.101`) / **FTP** (`.104`)
+- The **E-Commerce** Ubuntu box (`172.20.242.30`)
+- The **Email/Webmail** Fedora box (`172.20.242.40`)
+- **Splunk** (`172.20.242.20`)
 
-You don't need to *do* anything to them yet. Just know they exist and where they sit.
+Notice the network splits into two segments — Linux boxes behind Palo Alto (`172.20.242.x`), Windows
+boxes behind Cisco FTD (`172.20.240.x`). You don't need to *do* anything to them yet. Just know they
+exist and where they sit.
 
 ---
 

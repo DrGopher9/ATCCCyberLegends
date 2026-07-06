@@ -1,12 +1,15 @@
 # Master Plan — The Season
 
-**Start:** July 2026 · **Target:** Minnesota CCDC state qualifier, Jan/Feb 2027 · **Stretch:** Midwest
-Regional CCDC (Feb–Mar 2027)
+**Start:** July 2026 · **Target:** Minnesota CCDC state qualifier, **~late Jan 2027** (2026 was Jan 31,
+one day, 9am–4pm CST) · **Stretch:** Erich J. Spengler Midwest Regional CCDC, **~March 2027** (2026 was
+Mar 20–21 at Purdue University Northwest)
 
 This is the season roadmap. Each phase has its own overview in [`04-curriculum/`](04-curriculum/); each
 week is (or will be) a module folder like [`05-week-01-module/`](05-week-01-module/). Readiness is
 measured by [`02-readiness-rubric.md`](02-readiness-rubric.md). Roles by
-[`03-team-roles-and-comms.md`](03-team-roles-and-comms.md).
+[`03-team-roles-and-comms.md`](03-team-roles-and-comms.md). **What the competition actually is** —
+topology, scored services, scoring weights, rules — is in
+[`07-competition-reference.md`](07-competition-reference.md); read it before planning any scrimmage.
 
 > **Design principle:** *threat-informed phased progression.* Fundamentals first; red-team pressure
 > ramps deliberately; early low-stakes scrimmages before high-stakes ones. Every week re-drills prior
@@ -90,9 +93,10 @@ Exit gate: **Tier-2 Core checklist.** Ties to the repo's
 **Goal:** each member takes a specialty box, learns it deeply, and — crucially — **defends it against
 the red team attacking it live in the lab.** Everyone still keeps the Core sharp via warm-ups.
 
-Specialty tracks (map to roles in [`03-team-roles-and-comms.md`](03-team-roles-and-comms.md)):
-Windows AD/DNS/DHCP · E-Commerce (Ubuntu) · Email + Webmail (Fedora) · Palo Alto firewall · Splunk
-SIEM.
+Specialty tracks (the actual boxes — map to roles in [`03-team-roles-and-comms.md`](03-team-roles-and-comms.md)
+and rubric tracks in [`02-readiness-rubric.md`](02-readiness-rubric.md)): Windows **AD/DNS** (Server
+2019) · Windows **Web/FTP** (IIS + Server 2022) · **E-Commerce** (Ubuntu) · **Email/Webmail** (Fedora,
+SMTP/POP3) · **Network** (Palo Alto + Cisco FTD + VyOS) · **Splunk** SIEM.
 
 | Wk | Focus | Key outcomes |
 |---|---|---|
@@ -135,8 +139,11 @@ every scrimmage. This is where the team actually gets good.
 | 21 | Fix-it week: close the AAR gaps; re-drill weak skills |
 | 22 | Full scrimmage #2 (heavier red team, full inject load) + AAR |
 | 23 | Fix-it week + specialty cross-training (bench depth, backups for every role) |
-| 24 | **Dress rehearsal:** full-length scrimmage under qualifier conditions + AAR |
+| 24 | **Dress rehearsal:** full **7-hour (9am–4pm)** scrimmage under qualifier conditions + AAR |
 | 25 | Final fixes; confirm the capstone thresholds are met |
+
+Model scrimmages on the real format: a **single ~7-hour day**, injects via a NISE-like portal as PDFs,
+IR reports scored, no VM reverts. See [`07-competition-reference.md`](07-competition-reference.md).
 
 Exit gate: **capstone scrimmage thresholds** in the rubric (uptime %, injects on time, footholds
 evicted, clean docs & comms). Every scrimmage uses [`templates/scrimmage-scorecard.md`](templates/scrimmage-scorecard.md)
@@ -148,11 +155,15 @@ and [`templates/aar-template.md`](templates/aar-template.md).
 
 **Goal:** peak, don't cram. Lock logistics, keep skills warm with light drills, rest, and execute.
 
-- Confirm roster (starting 8 + alternates), roles, travel/setup logistics.
+- Confirm roster (up to 12; **8 compete**, min 4, max 2 grad students), roles, travel/setup logistics.
+- **Submit the team GitHub repo URL to the State Director** so it's reachable via the web proxy during
+  play — otherwise the repo is unavailable at game time (packet rule).
 - Light skill-maintenance drills only — **no new content, no exhausting scrimmages** the final week.
-- Print/prepare the in-competition kit: quick-reference, first-30-minutes runbook, inject templates,
-  change-log, password tracker, contact list.
-- Pre-competition brief: rules review, comms plan, "if X breaks, who owns it."
+- Print/prepare the in-competition kit (**printed materials are allowed; no USB/media**): quick-
+  reference, first-30-minutes runbook, inject templates, change-log, password tracker, contact list,
+  and the confirmed scored-service list.
+- Pre-competition brief: rules review, comms plan, "if X breaks, who owns it," inject ownership,
+  **times are CST**, inject responses are **PDFs** in the portal.
 - **Compete.**
 
 ---
