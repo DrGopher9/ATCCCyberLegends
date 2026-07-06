@@ -17,12 +17,16 @@ in [`03-team-roles-and-comms.md`](../03-team-roles-and-comms.md) and rubric trac
 
 ## Weeks
 
-| Wk | Focus | Lab spine |
-|---|---|---|
-| 12 | Deep-dive your box: services, scored components, normal state, failure modes | Document your box's baseline; break & recover each scored service |
-| 13 | **Red team attacks your box**; you observe & detect | Watch the attack live, then find it in Splunk/logs |
-| 14 | Harden + monitor against those attacks; write detections | Defend against exactly what you just saw; verify service stays up |
-| 15 | **Persistence hunting** + Tier-3 checkpoint | Find & evict planted persistence on your box; specialty assessment |
+All four weeks are built out as full modules. Each keeps the standard shape (facilitator guide /
+lab / homework / assessment); the **labs and assessments branch by track** (AD/DNS, Web/FTP, E-Comm,
+Email/Webmail, Network, Splunk), with a common frame plus a section per specialty.
+
+| Wk | Focus | Lab spine | Module |
+|---|---|---|---|
+| 12 | Deep-dive your box: services, scored components, normal state, failure modes | Document your box's baseline; break & recover each scored service | [`05-week-12-module/`](../05-week-12-module/) |
+| 13 | **Red team attacks your box**; you observe & detect | Watch the attack live, then find it in Splunk/logs (no eviction) | [`05-week-13-module/`](../05-week-13-module/) |
+| 14 | Harden + monitor against those attacks; write detections | Defend against exactly what you just saw; verify service stays up | [`05-week-14-module/`](../05-week-14-module/) |
+| 15 | **Persistence hunting** + Tier-3 gate | Find & evict planted persistence; full Tier-3 track assessment | [`05-week-15-module/`](../05-week-15-module/) |
 
 ## Teaching notes
 - The attack-first ordering is the whole point — resist the urge to teach defenses in the abstract.
