@@ -11,12 +11,14 @@ script they can't explain and can't reverse.
 
 ## Weeks
 
-| Wk | Focus | Lab spine | Rubric |
-|---|---|---|---|
-| 8 | Credentials — rotate all passwords/keys, kill unknown accounts, audit sudoers/admins | Full credential sweep on a Linux box, then Windows, against the clock | T2-C1, T2-C2, T2-C3 |
-| 9 | Hardening & host firewalls — manual rule-writing, then repo scripts; **verify + rollback** | Harden a box without dropping its scored service; reverse one change | T2-C4, T2-C5, T2-C6 |
-| 10 | Splunk basics — architecture, forwarders, first searches & dashboards | Confirm forwarder reports; run the failed-login search; read a dashboard | T2-S1, T2-S2 |
-| 11 | Incident response fundamentals + **Core checkpoint** | Detect→contain→evict→document one scripted intrusion; Tier-2 assessment | T2-I1, T2-I2 |
+All four weeks are built out as full modules (facilitator guide / lab / homework / assessment).
+
+| Wk | Focus | Lab spine | Rubric | Module |
+|---|---|---|---|---|
+| 8 | Credentials — rotate all passwords/keys, kill unknown accounts, audit sudoers/admins | Full credential sweep on a Linux box, then Windows, against the clock | T2-C1, T2-C2, T2-C3 | [`05-week-08-module/`](../05-week-08-module/) |
+| 9 | Hardening & host firewalls — manual rule-writing, then repo scripts; **verify + rollback** | Harden a box without dropping its scored service; reverse one change | T2-C4, T2-C5, T2-C6 | [`05-week-09-module/`](../05-week-09-module/) |
+| 10 | Splunk basics — architecture, forwarders, first searches & dashboards | Confirm forwarder reports; run the failed-login search; read a dashboard | T2-S1, T2-S2 | [`05-week-10-module/`](../05-week-10-module/) |
+| 11 | Incident response + **Tier-2 Core checkpoint** | Detect→contain→evict→document a scripted intrusion; write the incident report; full Tier-2 gate | T2-I1, T2-I2, T2-I3 + gate | [`05-week-11-module/`](../05-week-11-module/) |
 
 ## Teaching notes
 - Pair every hardening action with two questions: *"Did the scored service survive?"* and *"How do I
