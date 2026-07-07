@@ -11,12 +11,15 @@ professionalism are where the point spread lives; roles and comms only work when
 
 ## Weeks
 
-| Wk | Focus | Lab spine |
-|---|---|---|
-| 16 | Roles & comms protocol; the "first 30 minutes" runbook | Run the opening tempo as a team; captain practices *not* touching keyboards |
-| 17 | Injects — workflow, templates, deadlines, professional writing | Complete a timed inject set; captain owns the White Team relationship |
-| 18 | Documentation & change management under load | Keep a clean change-log while boxes are being worked; handoff drills |
-| 19 | **First mini-scrimmage** (short, gentle red team) + AAR | Contact with a real attacker at low stakes; first structured AAR |
+All four weeks are built out as full modules. This phase is **team-level** (not track-branched) —
+labs and assessments are team drills with individual role checks.
+
+| Wk | Focus | Lab spine | Module |
+|---|---|---|---|
+| 16 | Roles & comms protocol; the "first 30 minutes" runbook | Run the opening tempo as a team; captain practices *not* touching keyboards | [`05-week-16-module/`](../05-week-16-module/) |
+| 17 | Injects — workflow, templates, deadlines, professional writing | Complete a timed inject set; PDFs on deadline to White-Team standard | [`05-week-17-module/`](../05-week-17-module/) |
+| 18 | Documentation & change management under load | Keep a clean, audit-ready board; handoffs; rollback-from-log; scorable IR reports | [`05-week-18-module/`](../05-week-18-module/) |
+| 19 | **First mini-scrimmage** (short, gentle red team) + AAR | Contact with a real attacker at low stakes; first structured AAR; **Phase 3 gate** | [`05-week-19-module/`](../05-week-19-module/) |
 
 ## Teaching notes
 - Injects are a **first-class workstream with an owner and a clock** — not an interruption. Grade the
