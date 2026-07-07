@@ -12,14 +12,18 @@ scrimmages without fixing gaps just rehearses the same mistakes.
 
 ## Weeks
 
-| Wk | Focus |
-|---|---|
-| 20 | **Full scrimmage #1** — full service load, moderate red team — + AAR + prioritized fix list |
-| 21 | **Fix-it week** — close the AAR gaps; re-drill the weakest Tier-2/3 skills |
-| 22 | **Full scrimmage #2** — heavier red team, full inject load — + AAR |
-| 23 | **Fix-it + cross-training** — every role gets a competent backup (bench depth) |
-| 24 | **Dress rehearsal** — full-length scrimmage under qualifier conditions — + AAR, scored to capstone thresholds |
-| 25 | **Final fixes** — close remaining gaps; confirm thresholds met; green-light decision |
+All six weeks are built out as full modules — alternating scrimmage weeks (20/22/24) and fix-it weeks
+(21/23/25), ramping from moderate to full-length qualifier intensity. Scrimmages use the
+[scorecard](../templates/scrimmage-scorecard.md) and [AAR template](../templates/aar-template.md).
+
+| Wk | Focus | Module |
+|---|---|---|
+| 20 | **Full scrimmage #1** — full service load, moderate red team — + AAR + fix list | [`05-week-20-module/`](../05-week-20-module/) |
+| 21 | **Fix-it week** — close the AAR gaps; re-drill the weakest Tier-2/3 skills | [`05-week-21-module/`](../05-week-21-module/) |
+| 22 | **Full scrimmage #2** — heavier red team, full inject load, lateral movement — + AAR | [`05-week-22-module/`](../05-week-22-module/) |
+| 23 | **Fix-it + cross-training** — every box gets a backup who ran it solo (bench depth) | [`05-week-23-module/`](../05-week-23-module/) |
+| 24 | **Dress rehearsal** — full 7-hour scrimmage under qualifier conditions — **capstone gate** | [`05-week-24-module/`](../05-week-24-module/) |
+| 25 | **Final fixes** — close remaining gaps; confirm thresholds; green-light decision | [`05-week-25-module/`](../05-week-25-module/) |
 
 ## Teaching notes
 - **Every scrimmage produces a scorecard and an AAR.** No debrief, no learning.
