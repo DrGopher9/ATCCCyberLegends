@@ -7,6 +7,11 @@ themselves the final week. Sharpness beats volume now.
 
 **Exit gate:** compete at the **Minnesota CCDC state qualifier.**
 
+Built modules:
+- [`05-week-26-module/`](../05-week-26-module/) — Taper & logistics lock (roster, GitHub URL, kit)
+- [`05-week-27-module/`](../05-week-27-module/) — Qualifier week (brief, rest, compete, debrief)
+- [`05-regional-bridge-module/`](../05-regional-bridge-module/) — contingent re-peak for the Midwest Regional
+
 ## The taper (final ~2 weeks)
 
 - **No new content. No exhausting scrimmages the final week.** Light skill-maintenance drills only —

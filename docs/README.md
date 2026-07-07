@@ -50,8 +50,10 @@ Every week during the season:
 3. **Individual homework** — before the next session, done solo, checked at the top of the next
    session.
 
-Each week is one module folder — see [`05-week-01-module/`](05-week-01-module/) for the built
-template.
+Each week is one module folder (`05-week-NN-module/`) with a facilitator guide, lab, homework, and
+assessment. **All 27 weeks plus the regional bridge are built** — the phase overviews in
+[`04-curriculum/`](04-curriculum/) link every one; [`05-week-01-module/`](05-week-01-module/) is the
+reference template.
 
 ## How "ready" is measured
 

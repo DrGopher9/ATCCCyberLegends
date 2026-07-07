@@ -176,12 +176,17 @@ Same rhythm, higher difficulty.
 
 ---
 
-## How to build the rest of the season
+## Building & maintaining the season
 
-Weeks 2+ are **scaffolded above, not yet written.** To build one:
+**All 27 weeks (plus the regional bridge) are built** as full modules — `05-week-01-module/` through
+`05-week-27-module/` and `05-regional-bridge-module/`, each with a facilitator guide, lab, homework, and
+assessment. The phase overviews in [`04-curriculum/`](04-curriculum/) link every one.
 
-1. Copy [`templates/module-template.md`](templates/module-template.md) into a new
-   `05-week-NN-module/` folder (four files: facilitator guide, lab, homework, assessment).
-2. Fill it from the week's row above and the phase overview.
-3. Tie its assessment to the relevant rubric items.
-4. Follow the shape of the built [`05-week-01-module/`](05-week-01-module/).
+To add or revise a module (e.g. adapting to the 2027 environment), copy
+[`templates/module-template.md`](templates/module-template.md) into the target `05-week-NN-module/`
+folder, fill it from the week's row above and the phase overview, tie its assessment to the relevant
+rubric items, and follow the shape of the built [`05-week-01-module/`](05-week-01-module/).
+
+**Yearly maintenance:** when the 2027 MN/Midwest packet is published, reconcile it into
+[`07-competition-reference.md`](07-competition-reference.md) — every module defers to that file for
+topology, scored services, and rules, so the season updates from one place.
